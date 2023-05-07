@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.YUEYUE" parent="Theme.AppCompat.Light.NoActionBar">
+        <!-- Primary brand color. -->
+        <item name="colorPrimary">@android:color/transparent</item>
+        <item name="colorPrimaryVariant">@android:color/transparent</item>
+        <item name="colorOnPrimary">@android:color/white</item>
+        <!-- Secondary brand color. -->
+        <item name="colorSecondary">@color/theme_color_red</item>
+        <item name="colorSecondaryVariant">@color/theme_color_red</item>
+        <item name="colorOnSecondary">@color/theme_color_red</item>
+        <item name="android:statusBarColor" >@android:color/transparent</item>
+        <!-- Customize your theme here. -->
+        <item name="android:windowTranslucentStatus">true</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowActivityTransitions">true</item>
+        <item name="android:windowAnimationStyle">@style/ActivityAnim</item>
+    </style>
+    <style name="ActivityAnim" parent="@android:style/Animation.Activity">
+        <item name="android:activityOpenEnterAnimation">@anim/activity_enter</item>
+        <item name="android:activityOpenExitAnimation">@anim/activity_exit</item>
+        <item name="android:activityCloseEnterAnimation">@anim/activity_close_enter</item>
+        <item name="android:activityCloseExitAnimation">@anim/activity_close_exit</item>
+    </style>
+    <style name="DialogStyle" parent="@android:style/Theme.Dialog">
+        <!--去掉边框-->
+        <item name="android:windowFrame">@null</item>
+        <!--是否悬浮-->
+        <item name="android:windowIsFloating">true</item>
+
+        <!--是否需要标题-->
+        <item name="android:windowNoTitle">true</item>
+        <!--设置背景-->
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowAnimationStyle">@style/DialogAnim</item>
+    </style>
+    <style name="DialogAnim" parent="@android:style/Animation.Dialog">
+        <item name="android:windowEnterAnimation">@anim/dialog_close_enter</item>
+        <item name="android:windowExitAnimation">@anim/dialog_close_exit</item>
+
+    </style>
+    <style name="AppTheme.NoActionBar.FullScreen" parent="Theme.AppCompat.Light.NoActionBar">
+        <item name="android:windowFullscreen">true</item>
+        <item name="android:windowBackground">@android:color/white</item>
+    </style>
+</resources>

@@ -1,0 +1,55 @@
+<resources>
+    <string name="text_please_choose" translatable="false">请选择</string>
+    <string name="go_to_accessibility_settings" translatable="false"><![CDATA[请打开设置->无障碍服务->悦悦赚并开启]]></string>
+    <string name="key_guard_mode" translatable="false">key_guard_mode</string>
+    <string name="key_use_volume_control_record" translatable="false">key_use_volume_control_record</string>
+    <string name="key_use_volume_control_running" translatable="false">key_use_volume_control_running</string>
+    <string name="key_night_mode" translatable="false">key_night_mode</string>
+    <string name="key_enable_accessibility_service_by_root" translatable="false">key_enable_accessibility_service_by_root</string>
+    <string name="key_record_toast" translatable="false">key_record_toast</string>
+    <string name="key_root_record_out_file_type" translatable="false">key_root_record_out_file_type</string>
+    <string name="key_max_length_for_code_completion" translatable="false">key_max_length_for_code_completion</string>
+    <string name="key_auto_backup" translatable="false">key_auto_back</string>
+    <string name="key_foreground_servie" translatable="false">key_foreground_service</string>
+    <string name="key_script_dir_path" translatable="false">key_script_dir_path</string>
+    <string name="key_documentation_source" translatable="false">key_documentation_source</string>
+    <string name="key_enable_observe_key" translatable="false">key_enable_observe_key</string>
+    <string name="key_stable_mode" translatable="false">key_stable_mode</string>
+    <string name="key_single_build_clean_mode" translatable="false">key_single_build_clean_mode</string>
+    <string name="default_value_script_dir_path" translatable="false">/脚本/</string>
+    <string name="text_execution_finished" formatted="false" translatable="false">\n------------\n[%s]运行结束，用时%f秒</string>
+    <string name="text_attribute" translatable="false">属性</string>
+    <string name="text_value" translatable="false">值</string>
+    <string name="text_already_copy_to_clip" translatable="false">已复制到剪贴板</string>
+    <string name="text_auto_operate_service_enabled_but_not_running" translatable="false">无障碍服务已启用但并未运行，这可能是安卓的BUG，您可能需要重启手机或重启无障碍服务</string>
+    <string name="text_enable_accessibility_service_by_root_timeout" translatable="false">使用Root权限启动无障碍服务超时</string>
+    <string name="text_no_accessibility_permission" translatable="false">无障碍服务未启动</string>
+    <string name="text_send" translatable="false">发送</string>
+    <string name="foreground_notification_text" translatable="false">需要保持才可以完成自动化任务哦</string>
+    <string name="text_no_floating_window_permission">没有悬浮窗权限</string>
+    <string name="text_accessibility_settings" translatable="false">打开无障碍服务</string>
+    <string name="text_current_package" translatable="false">当前应用包名:</string>
+    <string name="text_current_activity" translatable="false">当前活动:</string>
+    <string name="text_open_main_activity" translatable="false">打开主界面</string>
+    <string name="text_pointer_location" translatable="false">指针位置[Root]</string>
+    <string name="text_exit_floating_window" translatable="false">退出悬浮窗</string>
+    <string name="text_more" translatable="false">更多</string>
+    <string name="text_show_widget_infomation" translatable="false">查看控件信息</string>
+    <string name="text_show_layout_hierarchy" translatable="false">在布局层次中查看</string>
+    <string name="text_show_layout_bounds" translatable="false">在布局范围中查看</string>
+    <string name="not_login">普通功能无需登录</string>
+    <string name="text_setting">设置</string>
+    <string name="text_exit">退出</string>
+    <string name="text_connecting">正在连接</string>
+    <string name="text_reconnecting">正在重新连接</string>
+    <string name="text_connect_failed">连接失败：%s, 请检查电脑防火墙是否放行9317端口，是否在同一局域网中，VS CODE插件是否已开启服务…</string>
+    <string name="text_handshake_failed">握手失败</string>
+    <string name="text_invalid_project">无效项目</string>
+    <string name="text_script_save_successfully">保存成功，请刷新目录</string>
+    <string name="text_project_save_error">项目保存失败 %s</string>
+    <string name="text_project_save_success">项目已经保存到%s</string>
+    <string name="text_start_record">开始录制</string>
+    <string name="app_name">阅阅赚</string>
+    <string name="text_generate_code">生成代码</string>
+
+</resources>

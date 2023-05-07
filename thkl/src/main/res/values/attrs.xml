@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="SelectBackground">
+        <attr name="background_norm_color" format="color" />
+        <attr name="background_selected_color" format="color" />
+        <attr name="background_radius" format="dimension" />
+        <attr name="background_line_color" format="color" />
+        <attr name="background_line_width" format="dimension" />
+    </declare-styleable>
+</resources>
