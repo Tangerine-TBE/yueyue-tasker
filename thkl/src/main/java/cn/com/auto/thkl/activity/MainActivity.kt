@@ -39,7 +39,11 @@ import kotlinx.android.synthetic.main.activity_main_yueyue.*
 class MainActivity : BaseActivity() {
     private lateinit var handler: Handler
     override fun setStatusBar() {
-        ImmersionBar.with(this).statusBarColor("#00000000").statusBarDarkFont(true).init()
+        ImmersionBar.with(this)
+            .statusBarColor(android.R.color.transparent)
+            .statusBarDarkFont(true)
+            .navigationBarColor(android.R.color.transparent)
+            .init()
     }
 
     override fun initialize(): Any {
@@ -55,16 +59,15 @@ class MainActivity : BaseActivity() {
         val userId = SP.getString(Constant.USER_ID)
         val userPhone = SP.getString(Constant.USER_NAME)
         val userDate = SP.getString(Constant.APP_ID)
-        tv_user_id.text = userId
-        tv_user_phone.text = userPhone
-        tv_user_date.text = userDate
+        tv_id.text = userId
+        tv_phone.text = userPhone
+        tv_date.text = userDate
         /**用户信息获取完毕*/
     }
 
     override fun initListener() {
         /**退出登录返回登录界面*/
-        btn_login_out.setOnClickListener {
-
+        btn_logout.setOnClickListener {
             AccessibilityViewModel.logout.value = true
             finish()
         }

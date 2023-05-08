@@ -35,16 +35,14 @@ interface ApiService {
 
     @FormUrlEncoded
     @POST("/api/taskDevice/scriptExecutionFeedback")
-      fun scriptExecutionFeedback(
+     suspend fun scriptExecutionFeedback(
         @Header("access_token") token: String?,
-        @Field("contentType") type: String?,
-        @Field("deviceId") deviceId: Int,
         @Field("result") result: String?,
         @Field("runRecordId") recordId: Int,
         @Field("status") status: Int,
-        @Field("fileName") file: String?,
-        @Field("resultBase64") resultBase64:String
-    ): Observable<BaseRsp>
+        @Field("resultBase64") resultBase64:String,
+        @Field("title") title:String
+    ): BaseRsp
 
     @FormUrlEncoded
     @POST("/api/taskLogin/taskSignIn")

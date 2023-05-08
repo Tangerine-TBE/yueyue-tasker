@@ -24,7 +24,12 @@ class AutoClearEvent(override val task: TaskProperty) : EventAction("自动清�
             1 -> {
                 runEvent {
                     currentStep++
-                    App.service.performGlobalAction(AccessibilityService.GLOBAL_ACTION_RECENTS)
+                    var perform = false
+                    while (!perform){
+                        perform = App.service.performGlobalAction(AccessibilityService.GLOBAL_ACTION_RECENTS)
+                        L.e("自动清理${perform}")
+                        Thread.sleep(2000)
+                    }
                     runEvent({
                         /**出现最近无任务的处理方式*/
                         currentStep++
@@ -55,7 +60,6 @@ class AutoClearEvent(override val task: TaskProperty) : EventAction("自动清�
                                     event
                                 )
                             }
-
                         }
                     }
                 }

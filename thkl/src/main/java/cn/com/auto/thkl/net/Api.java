@@ -37,6 +37,7 @@ public class Api {
         HttpLoggingInterceptor httpLoggingInterceptor = new HttpLoggingInterceptor(new HttpLoggingInterceptor.Logger() {
             @Override
             public void log(String message) {
+                L.e(message);
             }
         })
                 .setLevel(HttpLoggingInterceptor.Level.BODY);

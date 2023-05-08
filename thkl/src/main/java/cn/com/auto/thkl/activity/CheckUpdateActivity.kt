@@ -22,7 +22,11 @@ import java.io.OutputStream
 class CheckUpdateActivity : BaseActivity() {
     private val mApkPath = App.app.applicationContext.filesDir.absolutePath + "/apks/"
     override fun setStatusBar() {
-        ImmersionBar.with(this).statusBarColor("#00000000").statusBarDarkFont(true).init()
+        ImmersionBar.with(this)
+            .statusBarColor(android.R.color.transparent)
+            .statusBarDarkFont(true)
+            .navigationBarColor(android.R.color.transparent)
+            .init()
     }
 
     override fun initialize(): Any = R.layout.activity_check_update
@@ -37,6 +41,11 @@ class CheckUpdateActivity : BaseActivity() {
 
     override fun onResume() {
         super.onResume()
+        startActivity(
+            Intent(
+                this@CheckUpdateActivity, AccessibilityCheckActivity::class.java
+            )
+        )
         lifecycleScope.launch {
             kotlin.runCatching {
                 Api.getApiService().getClientInfo("android")

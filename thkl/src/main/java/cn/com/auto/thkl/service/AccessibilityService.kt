@@ -124,6 +124,7 @@ open class AccessibilityService : com.stardust.autojs.core.accessibility.Accessi
     private var targetPackAgeName: String? = null /*目标app*/
     private var scriptId: String? = null /*目标脚本id*/
     private var runRecordId: String? = null /*执行任务id*/
+    private var appName: String? = null /*执行脚本的app名称*/
     private var timer: Timer? = null
     private var bitmap: Bitmap? = null
     private var mApkPath = App.app.applicationContext.filesDir.absolutePath + "/apks/"
@@ -140,7 +141,7 @@ open class AccessibilityService : com.stardust.autojs.core.accessibility.Accessi
         super.onServiceConnected()
         mLifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_START)
         App.service = this
-         GlobalScope.launch {
+        GlobalScope.launch {
             firstStartEvent(TaskProperty(TaskType.AUTO_START_TASK, "", "", "", false, null))
         }
     }
@@ -156,16 +157,13 @@ open class AccessibilityService : com.stardust.autojs.core.accessibility.Accessi
             }
             timer = Timer()
             timer!!.schedule(object : TimerTask() {
-                override fun run() {
-                    /*脚本执行超时*/
-                    AccessibilityViewModel.report.postValue("$scriptId: 执行超时!")/*这里的主动停止要和用户按钮的主动停止做区分*/
-                    /*停止脚本*/
+                override fun run() {/*脚本执行超时*/
+                    AccessibilityViewModel.report.postValue("$scriptId: 执行超时!")/*这里的主动停止要和用户按钮的主动停止做区分*//*停止脚本*/
                     AutoJs.getInstance().scriptEngineService.stopAll()
                     GlobalScope.launch {
                         suspendListenerStop()
-                    }
-                    /*查询下一个任务*/
-                    AccessibilityViewModel.queryTask.value = 1
+                    }/*查询下一个任务*/
+                    AccessibilityViewModel.queryTask.postValue(1)
                 }
             }, runtimeDuration * 1000)
         }
@@ -181,7 +179,7 @@ open class AccessibilityService : com.stardust.autojs.core.accessibility.Accessi
             }
             /**脚本执行完毕，继续查询脚本*/
             GlobalScope.launch {
-                AccessibilityViewModel.queryTask.value = 1
+                AccessibilityViewModel.queryTask.postValue(1)
             }
         }
 
@@ -194,23 +192,7 @@ open class AccessibilityService : com.stardust.autojs.core.accessibility.Accessi
                 val msg = e.toString()
                 if (msg.contains("com.stardust.autojs.runtime.exception.ScriptInterruptedException")) {/*主动停止 ---- 只要是调用到AutoJs StopALl方法的都会走这里*/
                     GlobalScope.launch {
-                        Api.getApiService().scriptExecutionFeedback(
-                            StringUtils.replaceAutoJsValue(
-                                PreferenceManager.getDefaultSharedPreferences(this@AccessibilityService)
-                                    .getString(Constant.TOKEN, "")
-                            ),
-                            "2",
-                            runRecordId!!.toInt(),
-                            "",
-                            runRecordId!!.toInt(),
-                            6,
-                            "接口上报",
-                            getBitmapString(
-                                2, bitmap!!
-                            )
-                        ).subscribeOn(Schedulers.io()).subscribe({
-                        }, { it.printStackTrace() }).apply { mDisposable.add(this) }
-                        showBottomToast("脚本执行暂停")
+                        scriptReport("脚本执行暂停", 6, appName!!)
                         delay(2000)
                         onScriptStopListener?.onStop("stop")
                     }
@@ -218,6 +200,26 @@ open class AccessibilityService : com.stardust.autojs.core.accessibility.Accessi
             }
         }
     }
+
+    private fun scriptReport(result: String, status: Int, title: String) {
+        GlobalScope.launch {
+            kotlin.runCatching {
+                Api.getApiService().scriptExecutionFeedback(
+                    SP.getString(Constant.TOKEN),
+                    result,
+                    runRecordId!!.toInt(),
+                    status,
+                    getBitmapString(),
+                    title
+                )
+            }.onSuccess {
+                if (it.success) {
+                    showBottomToast("脚本上报成功")
+                }
+            }.onFailure { it.printStackTrace() }
+        }
+    }
+
     private var onScriptStopListener: OnScriptStopListener? = null
 
     interface OnScriptStopListener {
@@ -237,7 +239,7 @@ open class AccessibilityService : com.stardust.autojs.core.accessibility.Accessi
 
     private lateinit var imageReader: ImageReader
     private suspend fun queryTask(taskType: TaskType, job: Job) {/*开始查询任务*/
-        if (!TextUtils.isEmpty(targetPackAgeName)) {
+        if (!TextUtils.isEmpty(targetPackAgeName) && targetExit) {
             suspendAutoStopEvent(TaskProperty(taskType, targetPackAgeName, "", "", false, job))
         }
         suspendAutoClearEvent(TaskProperty(taskType, "", "", "", false, job))
@@ -247,7 +249,7 @@ open class AccessibilityService : com.stardust.autojs.core.accessibility.Accessi
         }.onFailure {
             showBottomToast("正在查询任务失败，正在重试")
             delay(5000)
-            AccessibilityViewModel.queryTask.value = 1
+            AccessibilityViewModel.queryTask.postValue(1)
         }.onSuccess {
             if (it.success) {
                 showBottomToast("正在查询任务成功")
@@ -255,7 +257,7 @@ open class AccessibilityService : com.stardust.autojs.core.accessibility.Accessi
                 if (jsonArray.size == 0) {
                     showBottomToast("无任务存在，下一次询问将在10秒后")
                     delay(10000)
-                    AccessibilityViewModel.queryTask.value = 1
+                    AccessibilityViewModel.queryTask.postValue(1)
                     return@onSuccess
                 }
                 val jsonObject = jsonArray.getJSONObject(0)
@@ -263,20 +265,25 @@ open class AccessibilityService : com.stardust.autojs.core.accessibility.Accessi
                 val packageApp: String = jsonObject.getString("uniqueCode")
                 val runRecordId = jsonObject.getInteger("runRecordId")
                 val versionCode = jsonObject.getString("appVersion")
+                val appName = jsonObject.getString("appName")
+                this@AccessibilityService.appName = appName
                 this@AccessibilityService.targetPackAgeName = packageApp
                 this@AccessibilityService.runRecordId = runRecordId.toString()
                 this@AccessibilityService.scriptId = scriptId.toString()
                 val boolean = hasPackageName(packageApp, versionCode.trim().toInt())
-                showBottomToast("查询目标app:${boolean}存在")
                 if (!boolean) {
-                    AccessibilityViewModel.executeTask.value = true
+                    targetExit = true
+                    AccessibilityViewModel.executeTask.postValue(true)
                 } else {
-                    AccessibilityViewModel.queryTask.value = 1
+                    targetExit = false
+                    scriptReport("${appName}不存在!",3,"")
+                    AccessibilityViewModel.queryTask.postValue(1)
                 }
             }
         }
     }
 
+    private var targetExit = false
 
     private fun writeResponseToDisk(path: String, response: Response<ResponseBody>) {
         if (response.body() != null) {
@@ -446,56 +453,63 @@ open class AccessibilityService : com.stardust.autojs.core.accessibility.Accessi
         }
     }
 
-    private suspend fun stopTask(scope: CoroutineScope, taskType: TaskType) {
+    private suspend fun stopTask(scope: Job, type: TaskType) {
         if (floatBallManager!!.state) {
+            floatBallManager!!.isCanOpen = false
+            floatBallManager!!.changeState(false)
             currentJob?.cancel()/*协程的取消并不可靠*/
-            currentType = taskType
+            currentType = taskType!!
             val i = AutoJs.getInstance().scriptEngineService.stopAll()
             if (i != 0) {
                 suspendListenerStop()
             }
-            suspendAutoStopEvent(
-                TaskProperty(
-                    taskType,
-                    targetPackAgeName,
-                    "",
-                    "",
-                    false,
-                    currentJob
+            if (!TextUtils.isEmpty(targetPackAgeName)) {
+                suspendAutoStopEvent(
+                    TaskProperty(
+                        type, targetPackAgeName, "", "", false, scope
+                    )
                 )
-            )
-            suspendAutoClearEvent(TaskProperty(taskType, "", "", "", false, currentJob))
-            floatBallManager!!.changeState(false)
+            }
+            suspendAutoClearEvent(TaskProperty(type, "", "", "", false, scope))
+            val intent = Intent(this@AccessibilityService, MainActivity::class.java)
+            startActivity(intent)
+            floatBallManager!!.isCanOpen = true
         }
     }
 
     /*重新开始任务，脚本任务会先走下载*/
     private fun resumeTask() {
         if (!floatBallManager!!.state) {
+            floatBallManager!!.changeState(true)
             when (currentType) {
                 TaskType.AUTO_EXECUTE_TASK -> {
-                    AccessibilityViewModel.executeTask.value = true
+                    AccessibilityViewModel.executeTask.postValue(true)
                 }
+
                 TaskType.AUTO_SHUT_DOWN_TASK -> {
-                    AccessibilityViewModel.shutDownTask.value = true
+                    AccessibilityViewModel.shutDownTask.postValue(true)
                 }
+
                 TaskType.AUTO_RESTART_TASK -> {
-                    AccessibilityViewModel.restartTask.value = true
+                    AccessibilityViewModel.restartTask.postValue(true)
                 }
+
                 TaskType.AUTO_EXIT_TASK -> {
-                    AccessibilityViewModel.exitTask.value = true
+                    AccessibilityViewModel.exitTask.postValue(true)
                 }
+
                 TaskType.AUTO_SETTING_TASK -> {
-                    AccessibilityViewModel.settingTask.value = true
+                    AccessibilityViewModel.settingTask.postValue(true)
                 }
+
                 TaskType.AUTO_QUERY_TASK -> {
-                    AccessibilityViewModel.queryTask.value = 1
+                    AccessibilityViewModel.queryTask.postValue(1)
                 }
+
                 else -> {
 
                 }
             }
-            floatBallManager!!.changeState(true)
         }
 
 
@@ -505,11 +519,8 @@ open class AccessibilityService : com.stardust.autojs.core.accessibility.Accessi
         val stopItem: MenuItem = object : MenuItem(BackGroudSeletor.getdrawble("ic_weixin", this)) {
             override fun action() {
                 if (floatBallManager!!.state) {
-                    val event = EventController.INSTANCE.getCurrentEvent()
-                    if (event != null) {
-                        GlobalScope.launch {
-                            AccessibilityViewModel.stopTask.value = true
-                        }
+                    GlobalScope.launch {
+                        AccessibilityViewModel.stopTask.postValue(true)
                     }
                 } else {
                     GlobalScope.launch {
@@ -526,15 +537,12 @@ open class AccessibilityService : com.stardust.autojs.core.accessibility.Accessi
         AccessibilityViewModel.shutDownTask.observe(this, Observer {
             if (it) {
                 currentJob = GlobalScope.launch {
+                    showTopToast("执行指令中")
+                    showBottomToast("关机")
                     taskType = TaskType.AUTO_SHUT_DOWN_TASK
                     suspendAutoShutDownEvent(
                         TaskProperty(
-                            taskType,
-                            "",
-                            "",
-                            "",
-                            false,
-                            currentJob
+                            taskType, "", "", "", false, currentJob
                         )
                     )
                 }
@@ -543,6 +551,8 @@ open class AccessibilityService : com.stardust.autojs.core.accessibility.Accessi
         AccessibilityViewModel.restartTask.observe(this, Observer {
             if (it) {
                 currentJob = GlobalScope.launch {
+                    showTopToast("执行指令中")
+                    showBottomToast("重启开始")
                     taskType = TaskType.AUTO_RESTART_TASK
                     suspendAutoRestartEvent(TaskProperty(taskType, "", "", "", false, currentJob))
                 }
@@ -551,6 +561,7 @@ open class AccessibilityService : com.stardust.autojs.core.accessibility.Accessi
         AccessibilityViewModel.queryTask.observe(this, Observer<Int> {
             if (it != 0) {
                 currentJob = GlobalScope.launch {
+                    showTopToast("查询任务中")
                     taskType = TaskType.AUTO_QUERY_TASK
                     queryTask(taskType!!, currentJob!!)
                 }
@@ -560,6 +571,8 @@ open class AccessibilityService : com.stardust.autojs.core.accessibility.Accessi
         AccessibilityViewModel.exitTask.observe(this, Observer {
             if (it) {
                 currentJob = GlobalScope.launch {
+                    showTopToast("执行指令中")
+                    showBottomToast("正在退出")
                     taskType = TaskType.AUTO_EXIT_TASK
                     autoExitTask(taskType!!, currentJob!!)
                 }
@@ -568,6 +581,7 @@ open class AccessibilityService : com.stardust.autojs.core.accessibility.Accessi
         AccessibilityViewModel.executeTask.observe(this, Observer {
             if (it) {
                 currentJob = GlobalScope.launch {
+                    showTopToast("正在执行任务")
                     taskType = TaskType.AUTO_EXECUTE_TASK
                     downLoadScriptTask()
                 }
@@ -586,16 +600,18 @@ open class AccessibilityService : com.stardust.autojs.core.accessibility.Accessi
             }
         })
         AccessibilityViewModel.overLayerTask.observe(this, Observer {
-            if (it){
+            if (it) {
                 currentJob = GlobalScope.launch {
                     taskType = TaskType.AUTO_OVER_LAYER_TASK
-                    overLayerTask(TaskProperty(taskType,"","","",false,currentJob))
+                    overLayerTask(TaskProperty(taskType, "", "", "", false, currentJob))
                 }
             }
         })
         AccessibilityViewModel.equipmentMaintenanceTask.observe(this, Observer {
+
             if (it) {
                 currentJob = GlobalScope.launch {
+                    showTopToast("正在进行每日维护，请勿干扰！")
                     taskType = TaskType.AUTO_MAINTENANCE_TASK
                     equipmentMaintenanceTask(taskType!!, "", currentJob!!)
                 }
@@ -603,10 +619,10 @@ open class AccessibilityService : com.stardust.autojs.core.accessibility.Accessi
         })
         AccessibilityViewModel.stopTask.observe(this, Observer {
             if (it) {
-                GlobalScope.launch {
-                    delay(2000)
-                    stopTask(this, TaskType.AUTO_STOP_TASK)
-                    onScriptStopListener?.onStop("targetStop")
+                var job: Job? = null
+                job = GlobalScope.launch {
+                    showTopToast("任务暂停")
+                    stopTask(job!!, TaskType.AUTO_STOP_TASK)
                 }
             }
 
@@ -621,36 +637,32 @@ open class AccessibilityService : com.stardust.autojs.core.accessibility.Accessi
                     showBottomToast("超时重试中!")
                     when (it.taskType) {
                         TaskType.AUTO_SETTING_TASK -> {
-                            AccessibilityViewModel.settingTask.value = true
+                            AccessibilityViewModel.settingTask.postValue(true)
                         }
+
                         TaskType.AUTO_QUERY_TASK -> {
-                            AccessibilityViewModel.queryTask.value = 1
+                            AccessibilityViewModel.queryTask.postValue(1)
                         }
 
                         TaskType.AUTO_RESTART_TASK -> {
-                            AccessibilityViewModel.shutDownTask.value = true
+                            AccessibilityViewModel.shutDownTask.postValue(true)
                         }
 
                         TaskType.AUTO_SHUT_DOWN_TASK -> {
-                            AccessibilityViewModel.shutDownTask.value = true
+                            AccessibilityViewModel.shutDownTask.postValue(true)
                         }
 
                         TaskType.AUTO_MAINTENANCE_TASK -> {
-                            AccessibilityViewModel.equipmentMaintenanceTask.value = true
+                            AccessibilityViewModel.equipmentMaintenanceTask.postValue(true)
                         }
 
                         TaskType.AUTO_STOP_SCRIPT_TASK -> {
 
                         }
-
                         TaskType.AUTO_OVER_LAYER_TASK -> {
-                            AccessibilityViewModel.overLayerTask.value = true
+                            AccessibilityViewModel.overLayerTask.postValue(true)
                         }
-                        TaskType.AUTO_STOP_TASK -> {
-                            AccessibilityViewModel.stopTask.value = true
-                        }
-
-                        else -> {
+                         else -> {
                             L.e("没有拦截的错误信息")
                         }
                     }
@@ -673,9 +685,9 @@ open class AccessibilityService : com.stardust.autojs.core.accessibility.Accessi
         AccessibilityViewModel.logout.observe(this, Observer {
             if (it) {
                 GlobalScope.launch {
-                    AccessibilityViewModel.stopTask.value = true
-                    AccessibilityViewModel.normalStartService.value = false
-                    AccessibilityViewModel.settingTask.value = false
+                    AccessibilityViewModel.stopTask.postValue(true)
+                    AccessibilityViewModel.normalStartService.postValue(false)
+                    AccessibilityViewModel.settingTask.postValue(false)
                     suspendListenerStop()
                     heartBeatJob?.cancel()
                     if (EasyFloat.isShow("1")) {
@@ -701,6 +713,9 @@ open class AccessibilityService : com.stardust.autojs.core.accessibility.Accessi
         })
         AccessibilityViewModel.report.observe(this, Observer {
             if (!TextUtils.isEmpty(it)) {
+                GlobalScope.launch {
+                    showBottomToast("正在上报")
+                }
                 appExecutionFeedBack(it)
             }
         })
@@ -817,9 +832,10 @@ open class AccessibilityService : com.stardust.autojs.core.accessibility.Accessi
         }, null)
     }
 
-    private suspend fun overLayerTask(scope: TaskProperty){
+    private suspend fun overLayerTask(scope: TaskProperty) {
         suspendAutoOverLayerEvent(scope.job, this@AccessibilityService)
     }
+
     private suspend fun settingTask(scope: TaskProperty) {
         /**特殊任务执行中，不允许被中断，收到任何中断指令需要上报，并提示*/
         if (!SP.getBoolean(Constant.AUTO_START)) {
@@ -838,7 +854,9 @@ open class AccessibilityService : com.stardust.autojs.core.accessibility.Accessi
             showTopToast("正在进行每日维护，请勿干扰！")
             showBottomToast("维护执行中")
             equipmentMaintenanceTask(scope.taskType, Constant.SCRIPT_APP, scope.job)
-            SP.putBoolean(Constant.FIRST_LOGIN, true)
+            if (!scope.job.isCancelled) {
+                SP.putBoolean(Constant.FIRST_LOGIN, true)
+            }
         }/*这个任务只在每一次登录的时候Service第一次启动时开启*/
         showTopToast("正在进行执行前检测")
         showBottomToast("查询微信状态")
@@ -863,6 +881,9 @@ open class AccessibilityService : com.stardust.autojs.core.accessibility.Accessi
             )
         }.onFailure { it.printStackTrace() }.onSuccess {
             val jsonArray = JSONArray.parseArray(JSONObject.toJSONString(it.obj))
+            if (jsonArray.isEmpty()){
+                return@onSuccess
+            }
             val item: List<String> = jsonArray.toList() as List<String>
             if (item.isEmpty()) {
                 return@onSuccess
@@ -871,39 +892,40 @@ open class AccessibilityService : com.stardust.autojs.core.accessibility.Accessi
                     when (i) {
                         "DEVICE_RESTARTS" -> {
                             showBottomToast("停止脚本，正在进行重启指令")
-                            AccessibilityViewModel.stopTask.value = true
+                            AccessibilityViewModel.stopTask.postValue(true)
                             suspendListenerStop()
-                            AccessibilityViewModel.restartTask.value = true
+                            AccessibilityViewModel.restartTask.postValue(true)
                         }
 
                         "DEVICE_SHUTS_DOWN" -> {
                             showBottomToast("停止脚本，正在进行关机指令")
-                            AccessibilityViewModel.stopTask.value = true
+                            AccessibilityViewModel.stopTask.postValue(true)
                             suspendListenerStop()
-                            AccessibilityViewModel.shutDownTask.value = true
+                            AccessibilityViewModel.shutDownTask.postValue(true)
                         }
 
                         "RUN_PAUSED" -> {
                             showBottomToast("停止脚本，正在进行停止指令")
-                            AccessibilityViewModel.stopTask.value = true
+                            AccessibilityViewModel.stopTask.postValue(true)
                         }
 
                         "RUN_CONTINUES" -> {
                             showBottomToast("开始脚本，正在进行开始指令")/*执行完插队任务后，继续恢复上一个任务*/
                             resumeTask()
                         }
+
                         "RUN_EXITS" -> {
                             showBottomToast("停止脚本，正在进行退出指令")
-                            AccessibilityViewModel.stopTask.value = true
+                            AccessibilityViewModel.stopTask.postValue(true)
                             suspendListenerStop()
-                            AccessibilityViewModel.exitTask.value = true
+                            AccessibilityViewModel.exitTask.postValue(true)
                         }
+
                         "DEVICE_MAINTENANCE" -> {
-                            showTopToast("正在进行每日维护，请勿干扰！")
                             showBottomToast("停止脚本，正在进行维护指令")
-                            AccessibilityViewModel.stopTask.value = true
+                            AccessibilityViewModel.stopTask.postValue(true)
                             suspendListenerStop()
-                            AccessibilityViewModel.equipmentMaintenanceTask.value = true
+                            AccessibilityViewModel.equipmentMaintenanceTask.postValue(true)
                             resumeTask()
                         }
                     }
@@ -1004,34 +1026,16 @@ open class AccessibilityService : com.stardust.autojs.core.accessibility.Accessi
     public fun reportEvent(event: BusinessEvent) {
         L.e(event.jsonValue)
         val jsonObject = JSONObject.parseObject(event.jsonValue)
-        val type = jsonObject.getInteger("contentType")
-        val status = jsonObject.getString("status")
+        val status = jsonObject.getInteger("status")
         val result = jsonObject.getString("result")
-        Api.getApiService().scriptExecutionFeedback(
-            StringUtils.replaceAutoJsValue(
-                PreferenceManager.getDefaultSharedPreferences(this).getString(Constant.TOKEN, "")
-            ),
-            type.toString(),
-            runRecordId!!.toInt(),
-            result,
-            runRecordId!!.toInt(),
-            status.toInt(),
-            "接口上报",
-            getBitmapString(
-                type, bitmap!!
-            )
-        ).subscribeOn(Schedulers.io()).subscribe({
-        }, { it.printStackTrace() }).apply { mDisposable.add(this) }
+        val title = jsonObject.getString("title")
+        scriptReport(result, status, title)
     }
 
-    private fun getBitmapString(type: Int, bitmap: Bitmap): String {
-        return if (type == 1) {
-            ""
-        } else {
-            val byteArrayOutputStream = ByteArrayOutputStream()
-            bitmap.compress(Bitmap.CompressFormat.JPEG, 100, byteArrayOutputStream)
-            Base64.encodeToString(byteArrayOutputStream.toByteArray(), Base64.DEFAULT)
-        }
+    private fun getBitmapString(): String {
+        val byteArrayOutputStream = ByteArrayOutputStream()
+        bitmap!!.compress(Bitmap.CompressFormat.PNG, 50, byteArrayOutputStream)
+        return  Base64.encodeToString(byteArrayOutputStream.toByteArray(),Base64.DEFAULT)
     }
 
     private fun appExecutionFeedBack(content: String) {
@@ -1078,7 +1082,7 @@ open class AccessibilityService : com.stardust.autojs.core.accessibility.Accessi
             Api.getApiService().scriptDetail(SP.getString(Constant.TOKEN), scriptId!!)
         }.onFailure {
             /*继续查询任务*/
-            AccessibilityViewModel.queryTask.value = 1
+            AccessibilityViewModel.queryTask.postValue(1)
         }.onSuccess {
             if (it.success) {
                 SP.putString(Constant.SCRIPT_ID, scriptId)
@@ -1092,9 +1096,8 @@ open class AccessibilityService : com.stardust.autojs.core.accessibility.Accessi
                     ), Charsets.UTF_8
                 )
                 Scripts.run(javaScript, listener)
-            } else {
-                /*继续查询任务*/
-                AccessibilityViewModel.queryTask.value = 1
+            } else {/*继续查询任务*/
+                AccessibilityViewModel.queryTask.postValue(1)
             }
 
         }

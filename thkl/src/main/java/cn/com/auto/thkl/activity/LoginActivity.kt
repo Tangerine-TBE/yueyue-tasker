@@ -44,7 +44,11 @@ class LoginActivity : BaseActivity() {
 
 
     override fun setStatusBar() {
-        ImmersionBar.with(this).statusBarColor("#00000000").statusBarDarkFont(true).init()
+        ImmersionBar.with(this)
+            .statusBarColor(android.R.color.transparent)
+            .statusBarDarkFont(true)
+            .navigationBarColor(android.R.color.transparent)
+            .init()
     }
 
     /*退出登录*//*第一次登录*//*二次登录*/
@@ -215,9 +219,9 @@ class LoginActivity : BaseActivity() {
                     withContext(Dispatchers.Main) {
                         hideProcessDialog()
                         if (!TextUtils.isEmpty(it.msg)) {
-                            ToastUtil.showToast(it.msg)
+                            ToastUtil.showLongToast(it.msg)
                         } else {
-                            ToastUtil.showToast(it.msgDetail)
+                            ToastUtil.showLongToast(it.msgDetail)
                         }
                     }
 

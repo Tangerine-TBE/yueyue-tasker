@@ -17,7 +17,7 @@ class SplashActivity : BaseActivity() {
             .statusBarColor(android.R.color.transparent)
             .statusBarDarkFont(true)
             .hideBar(BarHide.FLAG_HIDE_BAR)
-            .navigationBarColor(android.R.color.white)
+            .navigationBarColor(android.R.color.transparent)
             .init()
     }
 

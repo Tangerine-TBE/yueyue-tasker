@@ -30,7 +30,7 @@ public class FloatBallManager {
     public int floatBallX, floatBallY;
     private boolean isShowing = false;
     private List<MenuItem> menuItems = new ArrayList<>();
-    private boolean canOpen = false;
+    private boolean canOpen = true;
     public final boolean isCanOpen(){
         return canOpen;
     }
@@ -67,7 +67,7 @@ public class FloatBallManager {
 
     }
 
-    private boolean state = false;
+    private boolean state = true;
 
     public final boolean getState() {
         return state;

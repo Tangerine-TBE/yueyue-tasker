@@ -11,8 +11,9 @@ import kotlinx.android.synthetic.main.activity_accessibility_check.*
 class AccessibilityCheckActivity : BaseActivity() {
     override fun setStatusBar() {
         ImmersionBar.with(this)
-            .statusBarColor("#00000000")
+            .statusBarColor(android.R.color.transparent)
             .statusBarDarkFont(true)
+            .navigationBarColor("#FFFFFF")
             .init()
     }
 
@@ -26,7 +27,6 @@ class AccessibilityCheckActivity : BaseActivity() {
     private fun startLoginActivity(){
         if (AccessibilityServiceTool.isAccessibilityServiceEnabled(this)){
             val intent = Intent(this, LoginActivity::class.java)
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             startActivity(intent)
         }
     }

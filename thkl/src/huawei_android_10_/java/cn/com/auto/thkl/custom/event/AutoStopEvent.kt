@@ -5,6 +5,7 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.provider.Settings
+import android.text.TextUtils
 import android.view.accessibility.AccessibilityEvent
 import androidx.annotation.RequiresApi
 import cn.com.auto.thkl.App
@@ -15,7 +16,7 @@ import cn.com.auto.thkl.custom.task.TaskProperty
 import cn.com.auto.thkl.custom.task.TaskType
 
 @RequiresApi(Build.VERSION_CODES.P)
-class AutoStopEvent( override val task: TaskProperty) :
+class AutoStopEvent(override val task: TaskProperty) :
     EventAction("自动停止应用-${task.packName}", EventController.SYSTEM_EVENT) {
     override var currentStep = 1
 
@@ -25,13 +26,14 @@ class AutoStopEvent( override val task: TaskProperty) :
     override fun start(service: AccessibilityService, event: AccessibilityEvent?) {
         when (currentStep) {
             1 -> {
-                runEvent{
-                    val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).setData(
-                        Uri.fromParts(
-                            "package",
-                            task.packName,
-                            null
-                        )
+                runEvent {
+                    if (TextUtils.isEmpty(task.packName)) {
+                        EventController.INSTANCE.removeEvent(this, MsgType.FAILURE)
+                        return@runEvent
+                    }
+                    val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+                    intent.data = Uri.fromParts(
+                        "package", task.packName, null
                     )
                     intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                     App.service!!.startActivity(intent)
@@ -41,23 +43,29 @@ class AutoStopEvent( override val task: TaskProperty) :
 
             2 -> {
                 if (event!!.className == "com.android.settings.applications.InstalledAppDetailsTop" || event.packageName == "com.android.settings") {
-                    runEvent{
+                    runEvent {
                         val rootNodeInfo = App.service!!.rootInActiveWindow
-                        val targetList =  rootNodeInfo!!.findAccessibilityNodeInfosByViewId("com.android.settings:id/right_button")
-                        if (targetList.isEmpty()){
+                        val targetList =
+                            rootNodeInfo!!.findAccessibilityNodeInfosByViewId("com.android.settings:id/right_button")
+                        if (targetList.isEmpty()) {
                             return@runEvent
                         }
-                        val target =
-                            targetList[0]
+                        val target = targetList[0]
                         if (target != null) {
-                            target.getBoundsInScreen(rect)
-                            currentStep++
-                            clickPoint(
-                                ((rect.right + rect.left) / 2).toFloat(),
-                                ((rect.bottom + rect.top) / 2).toFloat(),
-                                service = service!!,
-                                event
-                            )
+                            if (target.isEnabled) {
+                                target.getBoundsInScreen(rect)
+                                currentStep++
+                                clickPoint(
+                                    ((rect.right + rect.left) / 2).toFloat(),
+                                    ((rect.bottom + rect.top) / 2).toFloat(),
+                                    service = service!!,
+                                    event
+                                )
+                            }else{
+                                EventController.INSTANCE.removeEvent(
+                                    this, MsgType.SUCCESS
+                                )/*开启下一个任务*/
+                            }
                         }
                     }
                 }
@@ -65,15 +73,16 @@ class AutoStopEvent( override val task: TaskProperty) :
 
             3 -> {
                 if (event!!.className == "android.app.AlertDialog" && event.packageName == "com.android.settings") {
-                    runEvent{
+                    runEvent {
                         val rootNodeInfo = App.service!!.rootInActiveWindow
-                        val targetList = rootNodeInfo!!.findAccessibilityNodeInfosByViewId("android:id/button1")
-                        if (targetList.isEmpty()){
+                        val targetList =
+                            rootNodeInfo!!.findAccessibilityNodeInfosByViewId("android:id/button1")
+                        if (targetList.isEmpty()) {
                             return@runEvent
                         }
                         val target = targetList[0]
                         if (target != null) {
-                            if (target.isClickable){
+                            if (target.isClickable) {
                                 target.getBoundsInScreen(rect)
                                 clickPoint(
                                     ((rect.right + rect.left) / 2).toFloat(),
@@ -81,7 +90,9 @@ class AutoStopEvent( override val task: TaskProperty) :
                                     service = service,
                                     event
                                 )
-                                EventController.INSTANCE.removeEvent(this, MsgType.SUCCESS)/*开启下一个任务*/
+                                EventController.INSTANCE.removeEvent(
+                                    this, MsgType.SUCCESS
+                                )/*开启下一个任务*/
                             }
                         }
                     }

@@ -1,6 +1,7 @@
 package cn.com.auto.thkl
 
 import android.annotation.SuppressLint
+import android.app.Activity
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.drawable.Drawable
@@ -26,6 +27,9 @@ import com.stardust.app.GlobalAppContext
 import com.stardust.autojs.core.ui.inflater.ImageLoader
 import com.stardust.autojs.core.ui.inflater.util.Drawables
 import com.stardust.theme.ThemeColor
+import me.jessyan.autosize.AutoSize
+import me.jessyan.autosize.AutoSizeConfig
+import me.jessyan.autosize.onAdaptListener
 import org.autojs.autojs.timing.TimedTaskManager
 import org.autojs.autojs.timing.TimedTaskScheduler
 import java.lang.ref.WeakReference
@@ -45,6 +49,16 @@ class App : MultiDexApplication() {
         instance = WeakReference(this)
         handler = Handler(Looper.getMainLooper())
         init()
+        /*ui 375 667 */
+        AutoSize.initCompatMultiProcess(this)
+        AutoSizeConfig.getInstance().setDesignHeightInDp(667)
+            .setDesignWidthInDp(375).onAdaptListener = object : onAdaptListener {
+            override fun onAdaptBefore(target: Any?, activity: Activity?) {
+            }
+
+            override fun onAdaptAfter(target: Any?, activity: Activity?) {
+            }
+        }
     }
 
 

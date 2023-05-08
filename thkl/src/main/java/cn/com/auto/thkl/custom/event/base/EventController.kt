@@ -72,7 +72,9 @@ class EventController private constructor() {
             if (event.task.job != null) {
                 if (!event.task.job.isCancelled) {
                     event.runTime++
-                    (event as EventAction).eventCompleted!!.eventCompleted(msgType.name)
+                    if (msgType != MsgType.TIME_OUT){
+                        (event as EventAction).eventCompleted!!.eventCompleted(msgType.name)
+                    }
                     this.currentEvent = null
                 }
             } else {

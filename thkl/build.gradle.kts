@@ -65,9 +65,10 @@ android {
         create("release"){
             keyPassword = "100344"
             keyAlias = "thkl"
-            storeFile = File("../thkl.jks")
+            storeFile = File("./thkl.jks")
             storePassword = "100344"
         }
+
     }
     buildTypes {
         release {
@@ -85,7 +86,7 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-
+            signingConfig = signingConfigs.getByName("release")
         }
     }
 
@@ -255,4 +256,6 @@ dependencies {
     implementation("com.gyf.immersionbar:immersionbar:2.3.2-beta05")
     implementation ("com.alibaba:fastjson:1.2.8")
     implementation ("com.blankj:utilcodex:1.31.1")
+    implementation ("me.jessyan:autosize:1.2.1")
+
 }

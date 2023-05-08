@@ -7,7 +7,8 @@ object Constant {
 
     const val Exception =
         "main();\n" + "function main(){\n" + "\n" + "try{\n" + "\tthrow \"THKLException\"\t\n" + "}catch(e){\n" + "\t\t\n" + "}\n" + "\n" + "console.log(\"jixu\")\n" + "\n" + "}"
-    const val BASE_URL = "http://192.168.31.52:8060/"
+    const val BASE_URL = "http://192.168.31.24:8060/"
+//        "http://192.168.31.52:8060/"
 
     /*would share to javaScript*/
     const val TOKEN = "token"
