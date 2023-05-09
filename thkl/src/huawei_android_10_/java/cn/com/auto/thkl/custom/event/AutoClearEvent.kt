@@ -41,7 +41,7 @@ class AutoClearEvent(override val task: TaskProperty) : EventAction("自动清�
             2 -> {
                 if (event!!.className == "com.huawei.android.launcher.unihome.UniHomeLauncher" && event.packageName == "com.huawei.android.launcher") {
                     runEvent {
-                        val targetList =  service.rootInActiveWindow.findAccessibilityNodeInfosByViewId("com.huawei.android.launcher:id/overview_panel2")
+                        val targetList =  App.service.rootInActiveWindow!!.findAccessibilityNodeInfosByViewId("com.huawei.android.launcher:id/overview_panel2")
                         if (targetList.isEmpty()){
                             EventController.INSTANCE.removeEvent(this, MsgType.SUCCESS)/*开启下一个任务*/
                             return@runEvent

@@ -1,5 +1,6 @@
 package cn.com.auto.thkl.model
 
+import android.app.Activity
 import android.media.projection.MediaProjection
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -21,6 +22,8 @@ object AccessibilityViewModel :ViewModel(){
     var capture = MutableLiveData<MediaProjection>() /*后台截屏*/
     var window = MutableLiveData(false)
     var retry = MutableLiveData<TaskProperty>()
-    var logout = MutableLiveData(false)
+    var logout = MutableLiveData<Activity>()
+    var showBottomToast = MutableLiveData<String>()
+    var showTopToast = MutableLiveData<String>()
 
 }

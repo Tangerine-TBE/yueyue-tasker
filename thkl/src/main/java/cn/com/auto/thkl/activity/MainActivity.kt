@@ -39,11 +39,8 @@ import kotlinx.android.synthetic.main.activity_main_yueyue.*
 class MainActivity : BaseActivity() {
     private lateinit var handler: Handler
     override fun setStatusBar() {
-        ImmersionBar.with(this)
-            .statusBarColor(android.R.color.transparent)
-            .statusBarDarkFont(true)
-            .navigationBarColor(android.R.color.transparent)
-            .init()
+        ImmersionBar.with(this).statusBarColor(android.R.color.transparent).statusBarDarkFont(true)
+            .navigationBarColor(android.R.color.transparent).init()
     }
 
     override fun initialize(): Any {
@@ -56,20 +53,33 @@ class MainActivity : BaseActivity() {
          * 1.持久华获取用户信息
          *  user_id*/
         handler = Handler(Looper.getMainLooper())
+        val loginName = SP.getString(Constant.LOGIN_NAME)
+        val userName = SP.getString(Constant.USER_NAME)
         val userId = SP.getString(Constant.USER_ID)
-        val userPhone = SP.getString(Constant.USER_NAME)
-        val userDate = SP.getString(Constant.APP_ID)
-        tv_id.text = userId
-        tv_phone.text = userPhone
-        tv_date.text = userDate
+        val expiryTime = SP.getString(Constant.EXPIRY_TIME)
+        val deviceId = SP.getString(Constant.DEVICE_ID)
+
+        tv_id.text = deviceId
+        tv_nick_name.text = loginName
+        tv_phone.text = userName
+        tv_date.text = expiryTime
+        tv_version.text = userId
         /**用户信息获取完毕*/
     }
 
     override fun initListener() {
         /**退出登录返回登录界面*/
         btn_logout.setOnClickListener {
-            AccessibilityViewModel.logout.value = true
-            finish()
+            AccessibilityViewModel.logout.value = this@MainActivity
+        }
+        btn_restart.setOnClickListener{
+            AccessibilityViewModel.restartTask.value =true
+        }
+        btn_shutdown.setOnClickListener{
+            AccessibilityViewModel.shutDownTask.value = true
+        }
+        btn_exit.setOnClickListener{
+            AccessibilityViewModel.exitTask.value = true
         }
         if (AccessibilityViewModel.hearBeatTask.value != true) {
             AccessibilityViewModel.hearBeatTask.value = true

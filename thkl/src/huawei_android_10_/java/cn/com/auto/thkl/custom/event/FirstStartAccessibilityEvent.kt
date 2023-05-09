@@ -14,6 +14,7 @@ import cn.com.auto.thkl.custom.event.base.MsgType
 import cn.com.auto.thkl.custom.task.TaskProperty
 import cn.com.auto.thkl.custom.task.TaskType
 import cn.com.auto.thkl.utils.L
+import kotlin.concurrent.thread
 
 
 /**当开启无障碍服务时，开启此次事件
@@ -25,25 +26,36 @@ class FirstStartAccessibilityEvent(
 
     override var currentStep = 1
     override var runTime: Int = 60
-
+    private var shouldQuick = false
 
     override fun start(service: AccessibilityService, event: AccessibilityEvent?) {
         when (currentStep) {
             1 -> {
-                    if (event != null) {
-                        val targetList =
-                            App.service.rootInActiveWindow?.findAccessibilityNodeInfosByText("应用市场")
-                        if (targetList!!.isNotEmpty()) {
-                            runEvent{
-                                val intent = Intent(App.service, LoginActivity::class.java)
-                                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                                App.service.startActivity(intent)
-                                EventController.INSTANCE.removeEvent(this, MsgType.SUCCESS)/*开启下一个任务*/
-                                return@runEvent
+                shouldQuick = false
+                    val targetList =
+                        App.service.rootInActiveWindow?.findAccessibilityNodeInfosByText("应用市场")
+                    if (targetList!!.isNotEmpty()) {
+                        runEvent {
+                            val intent = Intent(App.service, LoginActivity::class.java)
+                            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                            App.service.startActivity(intent)
+                            EventController.INSTANCE.removeEvent(this, MsgType.SUCCESS)/*开启下一个任务*/
+                            return@runEvent
+                        }
+                    }else{
+                        back(service)
+                        shouldQuick = true
+                        thread {
+                            while (shouldQuick){
+                                Thread.sleep(500)
+                                if (shouldQuick){
+                                    back(service)
+                                }
+                                return@thread
                             }
                         }
                     }
-                back(service)
+
             }
         }
     }

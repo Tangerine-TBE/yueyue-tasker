@@ -41,11 +41,6 @@ class CheckUpdateActivity : BaseActivity() {
 
     override fun onResume() {
         super.onResume()
-        startActivity(
-            Intent(
-                this@CheckUpdateActivity, AccessibilityCheckActivity::class.java
-            )
-        )
         lifecycleScope.launch {
             kotlin.runCatching {
                 Api.getApiService().getClientInfo("android")

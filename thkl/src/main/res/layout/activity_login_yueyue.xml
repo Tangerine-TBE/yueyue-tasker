@@ -100,7 +100,7 @@
             android:src="@mipmap/icon_cipher"
             android:layout_height="wrap_content"/>
         <EditText
-            android:inputType="textPassword|numberPassword"
+            android:inputType="textPassword"
             android:id = "@+id/et_cipher"
             app:layout_constraintStart_toEndOf="@id/iv_cipher"
             app:layout_constraintEnd_toEndOf="parent"

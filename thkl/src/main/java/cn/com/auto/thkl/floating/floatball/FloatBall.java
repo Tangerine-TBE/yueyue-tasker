@@ -15,6 +15,7 @@ import android.view.WindowManager;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 
+import androidx.core.content.ContextCompat;
 import cn.com.auto.thkl.autojs.key.GlobalKeyObserver;
 import cn.com.auto.thkl.floating.FloatBallManager;
 import cn.com.auto.thkl.floating.FloatBallUtil;
@@ -57,7 +58,7 @@ public class FloatBall extends FrameLayout implements ICarrier, GlobalKeyObserve
 
     private void init(Context context) {
         imageView = new ImageView(context);
-        setNormalState();
+        initState();
         addView(imageView, new ViewGroup.LayoutParams(mSize, mSize));
         initLayoutParams(context);
         mTouchSlop = ViewConfiguration.get(context).getScaledTouchSlop();
@@ -77,12 +78,20 @@ public class FloatBall extends FrameLayout implements ICarrier, GlobalKeyObserve
         newIcon.setColorFilter(Color.GREEN, PorterDuff.Mode.SRC_ATOP);
         floatBallManager.setState(true);
     }
+    public final void initState(){
+        final  Drawable icon =mConfig.mIcon;
+        mSize = mConfig.mSize;
+        Util.setBackground(imageView,icon);
+        Drawable newIcon = icon.mutate();
+        newIcon.setColorFilter(Color.GRAY,PorterDuff.Mode.SRC_ATOP);
+    }
     public final void setUnNormalState(){
         final  Drawable icon = mConfig.mIcon;
         mSize = mConfig.mSize;
         Util.setBackground(imageView,icon);
         Drawable newIcon = icon.mutate();
         newIcon.setColorFilter(Color.RED, PorterDuff.Mode.SRC_ATOP);
+        floatBallManager.setState(false);
     }
 
     @Override

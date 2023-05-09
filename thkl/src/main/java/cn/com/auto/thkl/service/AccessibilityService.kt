@@ -37,6 +37,7 @@ import cn.com.auto.thkl.activity.LoginActivity
 import cn.com.auto.thkl.activity.MainActivity
 import cn.com.auto.thkl.autojs.AutoJs
 import cn.com.auto.thkl.custom.event.*
+import cn.com.auto.thkl.custom.event.base.EventAction
 import cn.com.auto.thkl.custom.event.base.EventController
 import cn.com.auto.thkl.custom.event.base.MsgType
 import cn.com.auto.thkl.custom.event.base.SuspendEventManager
@@ -80,6 +81,7 @@ import io.reactivex.schedulers.Schedulers
 import kotlinx.android.synthetic.main.toast_.view.*
 import kotlinx.android.synthetic.main.view_top_msg.view.*
 import kotlinx.coroutines.*
+import okhttp3.MediaType
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
@@ -202,25 +204,43 @@ open class AccessibilityService : com.stardust.autojs.core.accessibility.Accessi
     }
 
     private fun scriptReport(result: String, status: Int, title: String) {
+        L.e("title:${title}")
         GlobalScope.launch {
-            kotlin.runCatching {
-                Api.getApiService().scriptExecutionFeedback(
-                    SP.getString(Constant.TOKEN),
-                    result,
-                    runRecordId!!.toInt(),
-                    status,
-                    getBitmapString(),
-                    title
+            withContext(Dispatchers.IO) {
+                val jsonObject = JSONObject()
+                jsonObject["fileName"] = System.currentTimeMillis().toString()
+                jsonObject["result"] = result
+                jsonObject["resultBase64"] = getBitmapString()
+                jsonObject["runRecordId"] = runRecordId!!
+                jsonObject["status"] = status
+                jsonObject["title"] = title
+                val requestBody = RequestBody.create(
+                    "application/json;charset=UTF-8".toMediaTypeOrNull(), jsonObject.toJSONString()
                 )
-            }.onSuccess {
-                if (it.success) {
-                    showBottomToast("脚本上报成功")
-                }
-            }.onFailure { it.printStackTrace() }
+                kotlin.runCatching {
+                    Api.getApiService().scriptExecutionFeedback(
+                        SP.getString(Constant.TOKEN), requestBody
+                    )
+                }.onSuccess {
+                    if (it.success) {
+                        showBottomToast("脚本上报成功")
+                    }
+                }.onFailure { it.printStackTrace() }
+            }
+
         }
     }
 
     private var onScriptStopListener: OnScriptStopListener? = null
+    private var onPauseListener: OnPauseListener? = null
+
+    interface OnPauseListener {
+        fun onScriptPause(name: String)
+    }
+
+    interface OnFinishListener {
+        fun onFinish(name: String)
+    }
 
     interface OnScriptStopListener {
         fun onStop(name: String)
@@ -230,6 +250,26 @@ open class AccessibilityService : com.stardust.autojs.core.accessibility.Accessi
         suspendCoroutine<String> { continuation ->
             onScriptStopListener = object : OnScriptStopListener {
                 override fun onStop(name: String) {
+                    continuation.resume(name)
+                }
+            }
+        }
+    }
+
+    private suspend fun suspendListenerFinish() {
+        suspendCoroutine<String> { continuation ->
+            onFinishListener = object : OnFinishListener {
+                override fun onFinish(name: String) {
+                    continuation.resume(name)
+                }
+            }
+        }
+    }
+
+    private suspend fun suspendListenerPause() {
+        suspendCoroutine<String> { continuation ->
+            onPauseListener = object : OnPauseListener {
+                override fun onScriptPause(name: String) {
                     continuation.resume(name)
                 }
             }
@@ -256,8 +296,9 @@ open class AccessibilityService : com.stardust.autojs.core.accessibility.Accessi
                 val jsonArray = JSONArray.parseArray(JSONArray.toJSONString(it.obj))
                 if (jsonArray.size == 0) {
                     showBottomToast("无任务存在，下一次询问将在10秒后")
+                    targetExit = false
                     delay(10000)
-                    AccessibilityViewModel.queryTask.postValue(1)
+                    queryTask(taskType, job)
                     return@onSuccess
                 }
                 val jsonObject = jsonArray.getJSONObject(0)
@@ -276,9 +317,15 @@ open class AccessibilityService : com.stardust.autojs.core.accessibility.Accessi
                     AccessibilityViewModel.executeTask.postValue(true)
                 } else {
                     targetExit = false
-                    scriptReport("${appName}不存在!",3,"")
-                    AccessibilityViewModel.queryTask.postValue(1)
+                    scriptReport("${appName}不存在!", 3, appName)
+                    delay(10000)
+                    queryTask(taskType, job)
                 }
+            }else{
+                delay(10000)
+                targetExit = false
+                showBottomToast("无任务存在，下一次询问将在10秒后")
+                queryTask(taskType, job)
             }
         }
     }
@@ -373,10 +420,7 @@ open class AccessibilityService : com.stardust.autojs.core.accessibility.Accessi
                                 var target = ""
                                 for (remote in installMatcher) {
                                     val remotePkName = remote.getString("uniqueCode")
-                                    if (localApp.packageName.equals(remotePkName) || localApp.packageName.equals(
-                                            packageName
-                                        )
-                                    ) {
+                                    if (localApp.packageName.equals(remotePkName)) {
                                         target = "111"
                                     }
                                 }
@@ -387,8 +431,6 @@ open class AccessibilityService : com.stardust.autojs.core.accessibility.Accessi
                                     uninstallApps.add(targetObject)
                                 }
                             }
-
-
                         }/*用户不关心的应用进行卸载*/
                         if (uninstallApps.isNotEmpty()) {
                             equipmentUnInstallTask(taskType, uninstallApps, job)
@@ -453,6 +495,19 @@ open class AccessibilityService : com.stardust.autojs.core.accessibility.Accessi
         }
     }
 
+    private suspend fun stopTask() {
+        if (floatBallManager!!.state) {
+            floatBallManager!!.isCanOpen = false
+            currentJob?.cancel()/*协程的取消并不可靠*/
+            currentType = taskType!!
+            val i = AutoJs.getInstance().scriptEngineService.stopAll()
+            if (i != 0) {
+                suspendListenerStop()
+            }
+            floatBallManager!!.isCanOpen = true
+        }
+    }
+
     private suspend fun stopTask(scope: Job, type: TaskType) {
         if (floatBallManager!!.state) {
             floatBallManager!!.isCanOpen = false
@@ -474,6 +529,9 @@ open class AccessibilityService : com.stardust.autojs.core.accessibility.Accessi
             val intent = Intent(this@AccessibilityService, MainActivity::class.java)
             startActivity(intent)
             floatBallManager!!.isCanOpen = true
+            if (onPauseListener != null) {
+                onPauseListener?.onScriptPause("onStop")
+            }
         }
     }
 
@@ -566,7 +624,22 @@ open class AccessibilityService : com.stardust.autojs.core.accessibility.Accessi
                     queryTask(taskType!!, currentJob!!)
                 }
             }
+        })
+        AccessibilityViewModel.showBottomToast.observe(this, Observer<String> {
+            if (!TextUtils.isEmpty(it)){
+                GlobalScope.launch {
+                    showBottomToast(it)
+                }
+            }
+        })
+        AccessibilityViewModel.showTopToast.observe(this, Observer<String> {
+            if (!TextUtils.isEmpty(it)){
+                GlobalScope.launch {
+                    showTopToast(it)
 
+
+                }
+            }
         })
         AccessibilityViewModel.exitTask.observe(this, Observer {
             if (it) {
@@ -608,12 +681,12 @@ open class AccessibilityService : com.stardust.autojs.core.accessibility.Accessi
             }
         })
         AccessibilityViewModel.equipmentMaintenanceTask.observe(this, Observer {
-
             if (it) {
                 currentJob = GlobalScope.launch {
                     showTopToast("正在进行每日维护，请勿干扰！")
                     taskType = TaskType.AUTO_MAINTENANCE_TASK
                     equipmentMaintenanceTask(taskType!!, "", currentJob!!)
+                    onFinishListener?.onFinish("onFinish")
                 }
             }
         })
@@ -623,6 +696,12 @@ open class AccessibilityService : com.stardust.autojs.core.accessibility.Accessi
                 job = GlobalScope.launch {
                     showTopToast("任务暂停")
                     stopTask(job!!, TaskType.AUTO_STOP_TASK)
+                }
+            } else {
+                if (AccessibilityViewModel.normalStartService.value == true) {
+                    GlobalScope.launch {
+                        stopTask()
+                    }
                 }
             }
 
@@ -659,10 +738,12 @@ open class AccessibilityService : com.stardust.autojs.core.accessibility.Accessi
                         TaskType.AUTO_STOP_SCRIPT_TASK -> {
 
                         }
+
                         TaskType.AUTO_OVER_LAYER_TASK -> {
                             AccessibilityViewModel.overLayerTask.postValue(true)
                         }
-                         else -> {
+
+                        else -> {
                             L.e("没有拦截的错误信息")
                         }
                     }
@@ -680,16 +761,20 @@ open class AccessibilityService : com.stardust.autojs.core.accessibility.Accessi
                         }
                     }
                 }
+            } else {
+                if (heartBeatJob != null) {
+                    heartBeatJob!!.cancel()
+                }
             }
         })
         AccessibilityViewModel.logout.observe(this, Observer {
-            if (it) {
+            if (it != null) {
                 GlobalScope.launch {
-                    AccessibilityViewModel.stopTask.postValue(true)
                     AccessibilityViewModel.normalStartService.postValue(false)
                     AccessibilityViewModel.settingTask.postValue(false)
-                    suspendListenerStop()
-                    heartBeatJob?.cancel()
+                    AccessibilityViewModel.hearBeatTask.postValue(false)
+                    AccessibilityViewModel.stopTask.postValue(false)
+                    AccessibilityViewModel.report.postValue("退出登录")
                     if (EasyFloat.isShow("1")) {
                         EasyFloat.dismiss("1")
                     }
@@ -701,6 +786,8 @@ open class AccessibilityService : com.stardust.autojs.core.accessibility.Accessi
                     ).also {
                         it.putExtra(LoginActivity.MODEL, "login_out")
                     })
+                    floatBallManager?.initState()
+                    it.finish()
                 }
             }
         })
@@ -708,6 +795,11 @@ open class AccessibilityService : com.stardust.autojs.core.accessibility.Accessi
             if (it) {
                 GlobalScope.launch {
                     showWindow()
+                    EventController.INSTANCE.addEvent(AutoRefreshLayerEvent(TaskProperty(TaskType.AUTO_CAPTURE_TASK, "", "", "", false, null))).execute(object:
+                        EventAction.OnEventCompleted{
+                        override fun eventCompleted(name: String) {
+                        }
+                    })
                 }
             }
         })
@@ -725,6 +817,8 @@ open class AccessibilityService : com.stardust.autojs.core.accessibility.Accessi
             }
         })
     }
+
+    private var onFinishListener: OnFinishListener? = null
 
     /*维护任务，卸载*/
     private suspend fun equipmentUnInstallTask(
@@ -838,6 +932,7 @@ open class AccessibilityService : com.stardust.autojs.core.accessibility.Accessi
 
     private suspend fun settingTask(scope: TaskProperty) {
         /**特殊任务执行中，不允许被中断，收到任何中断指令需要上报，并提示*/
+        floatBallManager!!.changeState(true)
         if (!SP.getBoolean(Constant.AUTO_START)) {
             showTopToast("正在进行每日维护，请勿干扰！")
             showBottomToast("自启动授权中")
@@ -853,7 +948,9 @@ open class AccessibilityService : com.stardust.autojs.core.accessibility.Accessi
         if (!SP.getBoolean(Constant.FIRST_LOGIN)) {
             showTopToast("正在进行每日维护，请勿干扰！")
             showBottomToast("维护执行中")
-            equipmentMaintenanceTask(scope.taskType, Constant.SCRIPT_APP, scope.job)
+            equipmentMaintenanceTask(
+                scope.taskType, Constant.APP_ID, scope.job
+            )
             if (!scope.job.isCancelled) {
                 SP.putBoolean(Constant.FIRST_LOGIN, true)
             }
@@ -864,7 +961,9 @@ open class AccessibilityService : com.stardust.autojs.core.accessibility.Accessi
         showBottomToast("查询支付宝状态")
         suspendAutoCheckAliPayEvent(scope)
         showBottomToast("查询任务中")
-        AccessibilityViewModel.queryTask.postValue(1)
+        if (!scope.job.isCancelled) {
+            AccessibilityViewModel.queryTask.postValue(1)
+        }
     }
 
     @SuppressLint("CheckResult")
@@ -881,7 +980,7 @@ open class AccessibilityService : com.stardust.autojs.core.accessibility.Accessi
             )
         }.onFailure { it.printStackTrace() }.onSuccess {
             val jsonArray = JSONArray.parseArray(JSONObject.toJSONString(it.obj))
-            if (jsonArray.isEmpty()){
+            if (jsonArray.isEmpty()) {
                 return@onSuccess
             }
             val item: List<String> = jsonArray.toList() as List<String>
@@ -891,16 +990,19 @@ open class AccessibilityService : com.stardust.autojs.core.accessibility.Accessi
                 for (i in item) {
                     when (i) {
                         "DEVICE_RESTARTS" -> {
-                            showBottomToast("停止脚本，正在进行重启指令")
-                            AccessibilityViewModel.stopTask.postValue(true)
-                            suspendListenerStop()
-                            AccessibilityViewModel.restartTask.postValue(true)
+                            GlobalScope.launch {
+                                showBottomToast("停止脚本，正在进行重启指令")
+                                AccessibilityViewModel.stopTask.postValue(true)
+                                suspendListenerPause()
+                                AccessibilityViewModel.restartTask.postValue(true)
+                            }
+
                         }
 
                         "DEVICE_SHUTS_DOWN" -> {
                             showBottomToast("停止脚本，正在进行关机指令")
                             AccessibilityViewModel.stopTask.postValue(true)
-                            suspendListenerStop()
+                            suspendListenerPause()
                             AccessibilityViewModel.shutDownTask.postValue(true)
                         }
 
@@ -917,15 +1019,20 @@ open class AccessibilityService : com.stardust.autojs.core.accessibility.Accessi
                         "RUN_EXITS" -> {
                             showBottomToast("停止脚本，正在进行退出指令")
                             AccessibilityViewModel.stopTask.postValue(true)
-                            suspendListenerStop()
+                            suspendListenerPause()
                             AccessibilityViewModel.exitTask.postValue(true)
                         }
 
                         "DEVICE_MAINTENANCE" -> {
                             showBottomToast("停止脚本，正在进行维护指令")
                             AccessibilityViewModel.stopTask.postValue(true)
-                            suspendListenerStop()
+                            L.e("停止开始")
+                            suspendListenerPause()
+                            L.e("停止完成")
                             AccessibilityViewModel.equipmentMaintenanceTask.postValue(true)
+                            L.e("维护开始")
+                            suspendListenerFinish()
+                            L.e("维护完成")
                             resumeTask()
                         }
                     }
@@ -1034,8 +1141,10 @@ open class AccessibilityService : com.stardust.autojs.core.accessibility.Accessi
 
     private fun getBitmapString(): String {
         val byteArrayOutputStream = ByteArrayOutputStream()
-        bitmap!!.compress(Bitmap.CompressFormat.PNG, 50, byteArrayOutputStream)
-        return  Base64.encodeToString(byteArrayOutputStream.toByteArray(),Base64.DEFAULT)
+        bitmap!!.compress(Bitmap.CompressFormat.PNG, 100, byteArrayOutputStream)
+        val byteArray = byteArrayOutputStream.toByteArray()
+        val base64 = Base64.encodeToString(byteArray, Base64.DEFAULT)
+        return base64
     }
 
     private fun appExecutionFeedBack(content: String) {

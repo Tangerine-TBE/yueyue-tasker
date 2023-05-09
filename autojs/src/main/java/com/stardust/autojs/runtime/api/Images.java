@@ -260,7 +260,7 @@ public class Images {
                 }
             }
             FileOutputStream out = new FileOutputStream(f);
-            bitmap.compress(Bitmap.CompressFormat.JPEG, 100, out);
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 10, out);
             out.flush();
             out.close();
             return f;

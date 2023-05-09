@@ -31,12 +31,15 @@ public class FloatBallManager {
     private boolean isShowing = false;
     private List<MenuItem> menuItems = new ArrayList<>();
     private boolean canOpen = true;
-    public final boolean isCanOpen(){
+
+    public final boolean isCanOpen() {
         return canOpen;
     }
-    public final void  setCanOpen(boolean canOpen){
+
+    public final void setCanOpen(boolean canOpen) {
         this.canOpen = canOpen;
     }
+
     public FloatBallManager(Context application, FloatBallCfg ballCfg) {
         this(application, ballCfg, null);
     }
@@ -57,14 +60,20 @@ public class FloatBallManager {
 
     public final void changeState(boolean normal) {
         state = normal;
-        if (floatBall != null){
+        if (floatBall != null) {
             if (normal) {
                 floatBall.setNormalState();
             } else {
                 floatBall.setUnNormalState();
             }
         }
+    }
 
+    public final void initState() {
+        if (floatBall != null) {
+            floatBall.initState();
+
+        }
     }
 
     private boolean state = true;
@@ -72,7 +81,8 @@ public class FloatBallManager {
     public final boolean getState() {
         return state;
     }
-    public final  void setState(boolean state){
+
+    public final void setState(boolean state) {
         this.state = state;
     }
 

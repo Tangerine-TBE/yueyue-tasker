@@ -3,6 +3,7 @@ package cn.com.auto.thkl.net
 import cn.com.auto.thkl.net.info.BaseRsp
 import io.reactivex.Observable
 import okhttp3.MultipartBody
+import okhttp3.RequestBody
 import okhttp3.ResponseBody
 import retrofit2.Response
 import retrofit2.http.*
@@ -33,15 +34,10 @@ interface ApiService {
         @Query("scriptId") scriptId: String
     ):BaseRsp
 
-    @FormUrlEncoded
     @POST("/api/taskDevice/scriptExecutionFeedback")
      suspend fun scriptExecutionFeedback(
         @Header("access_token") token: String?,
-        @Field("result") result: String?,
-        @Field("runRecordId") recordId: Int,
-        @Field("status") status: Int,
-        @Field("resultBase64") resultBase64:String,
-        @Field("title") title:String
+        @Body body: RequestBody
     ): BaseRsp
 
     @FormUrlEncoded

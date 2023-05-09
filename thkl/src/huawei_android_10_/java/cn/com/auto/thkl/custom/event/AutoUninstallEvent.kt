@@ -38,7 +38,7 @@ class AutoUninstallEvent(
             2 -> {
                 if (event!!.className == "com.android.settings.applications.InstalledAppDetailsTop" && event.packageName == "com.android.settings") {
                     runEvent {
-                        val targetList = service.rootInActiveWindow!!.findAccessibilityNodeInfosByText("卸载")
+                      val targetList =  App.service.rootInActiveWindow!!.findAccessibilityNodeInfosByText("卸载")
                         if (targetList.isEmpty()){
                             return@runEvent
                         }
@@ -60,7 +60,7 @@ class AutoUninstallEvent(
             3 -> {
                 if (event!!.className == "com.android.packageinstaller.UninstallerActivity" && event.packageName == "com.android.packageinstaller") {
                     runEvent {
-                        val targetList = service.rootInActiveWindow!!.findAccessibilityNodeInfosByViewId("android:id/button1")
+                        val targetList =  App.service.rootInActiveWindow!!.findAccessibilityNodeInfosByViewId("android:id/button1")
                         if (targetList.isEmpty()){
                             return@runEvent
                         }

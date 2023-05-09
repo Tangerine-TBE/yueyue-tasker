@@ -14,6 +14,7 @@ import cn.com.auto.thkl.Constant
 import cn.com.auto.thkl.R
 import cn.com.auto.thkl.base.BaseActivity
 import cn.com.auto.thkl.custom.event.AutoCaptureEvent
+import cn.com.auto.thkl.custom.event.AutoRefreshLayerEvent
 import cn.com.auto.thkl.custom.event.base.EventAction
 import cn.com.auto.thkl.custom.event.base.EventController
 import cn.com.auto.thkl.custom.task.TaskProperty
@@ -27,6 +28,7 @@ import com.afollestad.materialdialogs.MaterialDialog
 import com.alibaba.fastjson.JSONObject
 import com.gyf.barlibrary.ImmersionBar
 import com.stardust.app.permission.DrawOverlaysPermission
+import io.ktor.util.Identity.decode
 import kotlinx.android.synthetic.main.activity_login_yueyue.*
 import kotlinx.coroutines.*
 import kotlin.coroutines.resume
@@ -80,6 +82,8 @@ class LoginActivity : BaseActivity() {
         if (DrawOverlaysPermission.isCanDrawOverlays(this)) {
             if (AccessibilityViewModel.window.value != true) {
                 AccessibilityViewModel.window.value = true
+
+                return
             }
             if (AccessibilityViewModel.capture.value == null) {
                 GlobalScope.launch {
@@ -184,6 +188,7 @@ class LoginActivity : BaseActivity() {
     @RequiresApi(Build.VERSION_CODES.M)
     @SuppressLint("CommitPrefEdits")
     private fun start(account: String, cipher: String) {
+        AccessibilityViewModel.showTopToast.value = "正在自动登录"
         GlobalScope.launch {
             withContext(Dispatchers.Main) {
                 showProcessDialog()
@@ -203,11 +208,19 @@ class LoginActivity : BaseActivity() {
                     JSONObject.parseObject(string).getString("userName").let {
                         SP.putString(Constant.USER_NAME, it.toString())
                     }
-                    JSONObject.parseObject(string).getString("appId").let {
-                        SP.putString(Constant.APP_ID, it.toString())
+                    JSONObject.parseObject(string).getString("loginName").let {
+                        if (!TextUtils.isEmpty(it)){
+                            SP.putString(Constant.LOGIN_NAME, it.toString())
+                        }else{
+                            SP.putString(Constant.LOGIN_NAME,"未知")
+                        }
                     }
                     JSONObject.parseObject(string).getInteger("deviceId").let {
+
                         SP.putString(Constant.DEVICE_ID, it.toString())
+                    }
+                    JSONObject.parseObject(string).getString("expiryTime").let {
+                        SP.putString(Constant.EXPIRY_TIME, it.toString())
                     }
 
                     withContext(Dispatchers.Main) {
@@ -219,9 +232,9 @@ class LoginActivity : BaseActivity() {
                     withContext(Dispatchers.Main) {
                         hideProcessDialog()
                         if (!TextUtils.isEmpty(it.msg)) {
-                            ToastUtil.showLongToast(it.msg)
+                            AccessibilityViewModel.showBottomToast.value = it.msg
                         } else {
-                            ToastUtil.showLongToast(it.msgDetail)
+                            AccessibilityViewModel.showBottomToast.value = it.msgDetail
                         }
                     }
 
