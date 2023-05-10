@@ -14,6 +14,7 @@ import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
+import android.widget.TextView;
 
 import androidx.core.content.ContextCompat;
 import cn.com.auto.thkl.autojs.key.GlobalKeyObserver;
@@ -24,12 +25,14 @@ import cn.com.auto.thkl.floating.runner.OnceRunnable;
 import cn.com.auto.thkl.floating.runner.ScrollRunner;
 import cn.com.auto.thkl.floating.utils.MotionVelocityUtil;
 import cn.com.auto.thkl.floating.utils.Util;
+import cn.com.auto.thkl.weight.RoundTextView;
 
 
 public class FloatBall extends FrameLayout implements ICarrier, GlobalKeyObserver.OnVolumeDownListener {
 
     private FloatBallManager floatBallManager;
     private ImageView imageView;
+    private RoundTextView textView;
     private WindowManager.LayoutParams mLayoutParams;
     private WindowManager windowManager;
     private boolean isFirst = true;
@@ -49,6 +52,7 @@ public class FloatBall extends FrameLayout implements ICarrier, GlobalKeyObserve
     private boolean mHideHalfLater = true;
     private boolean mLayoutChanged = false;
     private int mSleepX = -1;
+
     public FloatBall(Context context, FloatBallManager floatBallManager, FloatBallCfg config) {
         super(context);
         this.floatBallManager = floatBallManager;
@@ -58,8 +62,12 @@ public class FloatBall extends FrameLayout implements ICarrier, GlobalKeyObserve
 
     private void init(Context context) {
         imageView = new ImageView(context);
+        textView = new RoundTextView(context);
         initState();
-        addView(imageView, new ViewGroup.LayoutParams(mSize, mSize));
+        FrameLayout.LayoutParams layoutParams = new FrameLayout.LayoutParams(mSize-35, mSize-35);
+        layoutParams.gravity = Gravity.CENTER;
+        addView(textView, layoutParams);
+        addView(imageView, new ViewGroup.LayoutParams(mSize,mSize));
         initLayoutParams(context);
         mTouchSlop = ViewConfiguration.get(context).getScaledTouchSlop();
         mRunner = new ScrollRunner(this);
@@ -70,25 +78,28 @@ public class FloatBall extends FrameLayout implements ICarrier, GlobalKeyObserve
     private void initLayoutParams(Context context) {
         mLayoutParams = FloatBallUtil.getLayoutParams(context);
     }
-    public final void setNormalState(){
-        final  Drawable icon = mConfig.mIcon;
+
+    public final void setNormalState() {
+        final Drawable icon = mConfig.mIcon;
         mSize = mConfig.mSize;
-        Util.setBackground(imageView,icon);
+        Util.setBackground(imageView, icon);
         Drawable newIcon = icon.mutate();
         newIcon.setColorFilter(Color.GREEN, PorterDuff.Mode.SRC_ATOP);
         floatBallManager.setState(true);
     }
-    public final void initState(){
-        final  Drawable icon =mConfig.mIcon;
+
+    public final void initState() {
+        final Drawable icon = mConfig.mIcon;
         mSize = mConfig.mSize;
-        Util.setBackground(imageView,icon);
+        Util.setBackground(imageView, icon);
         Drawable newIcon = icon.mutate();
-        newIcon.setColorFilter(Color.GRAY,PorterDuff.Mode.SRC_ATOP);
+        newIcon.setColorFilter(Color.GRAY, PorterDuff.Mode.SRC_ATOP);
     }
-    public final void setUnNormalState(){
-        final  Drawable icon = mConfig.mIcon;
+
+    public final void setUnNormalState() {
+        final Drawable icon = mConfig.mIcon;
         mSize = mConfig.mSize;
-        Util.setBackground(imageView,icon);
+        Util.setBackground(imageView, icon);
         Drawable newIcon = icon.mutate();
         newIcon.setColorFilter(Color.RED, PorterDuff.Mode.SRC_ATOP);
         floatBallManager.setState(false);
@@ -179,8 +190,7 @@ public class FloatBall extends FrameLayout implements ICarrier, GlobalKeyObserve
         }
         y = mConfig.mOffsetY != 0 ? y + mConfig.mOffsetY : y;
         if (y < 0) y = topLimit;
-        if (y > bottomLimit)
-            y = topLimit;
+        if (y > bottomLimit) y = topLimit;
         onLocation(x, y);
     }
 
@@ -227,7 +237,8 @@ public class FloatBall extends FrameLayout implements ICarrier, GlobalKeyObserve
         isClick = true;
 //        removeSleepRunnable();
     }
-    private void touchDown(){
+
+    private void touchDown() {
         isClick = true;
     }
 
@@ -358,7 +369,7 @@ public class FloatBall extends FrameLayout implements ICarrier, GlobalKeyObserve
 
     @Override
     public void onVolumeDown() {
-        if (floatBallManager.isCanOpen()){
+        if (floatBallManager.isCanOpen()) {
             getHandler().post(() -> {
                 touchDown();
                 touchUp();

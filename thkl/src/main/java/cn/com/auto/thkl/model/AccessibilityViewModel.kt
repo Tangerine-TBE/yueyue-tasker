@@ -25,5 +25,6 @@ object AccessibilityViewModel :ViewModel(){
     var logout = MutableLiveData<Activity>()
     var showBottomToast = MutableLiveData<String>()
     var showTopToast = MutableLiveData<String>()
+    var onDate = MutableLiveData<String>()
 
 }

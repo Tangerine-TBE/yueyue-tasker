@@ -11,6 +11,7 @@ import cn.com.auto.thkl.custom.event.base.MsgType
 import cn.com.auto.thkl.custom.task.TaskProperty
 import cn.com.auto.thkl.custom.task.TaskType
 import cn.com.auto.thkl.utils.L
+import kotlin.concurrent.thread
 
 @RequiresApi(Build.VERSION_CODES.P)
 class AutoClearEvent(override val task: TaskProperty) : EventAction("自动清理", EventController.SYSTEM_EVENT) {
@@ -25,11 +26,14 @@ class AutoClearEvent(override val task: TaskProperty) : EventAction("自动清�
                 runEvent {
                     currentStep++
                     var perform = false
-                    while (!perform){
-                        perform = App.service.performGlobalAction(AccessibilityService.GLOBAL_ACTION_RECENTS)
-                        L.e("自动清理${perform}")
-                        Thread.sleep(2000)
+                    thread {
+                        while (!perform){
+                            perform = App.service.performGlobalAction(AccessibilityService.GLOBAL_ACTION_RECENTS)
+                            L.e("自动清理${perform}")
+                            Thread.sleep(2000)
+                        }
                     }
+
                     runEvent({
                         /**出现最近无任务的处理方式*/
                         currentStep++

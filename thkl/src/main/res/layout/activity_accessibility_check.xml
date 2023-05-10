@@ -13,7 +13,7 @@
         android:src="@mipmap/icon_accessibility"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"/>
-    <androidx.appcompat.widget.LinearLayoutCompat
+    <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="wrap_content"
         android:gravity="center"
         android:id="@+id/layout_iv"
@@ -21,20 +21,25 @@
         app:layout_constraintTop_toBottomOf="@id/iv_accessibility"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        android:layout_height="21dp">
+        android:layout_height="63dp">
         <ImageView
+            android:layout_marginTop="1.5dp"
+            android:id="@+id/iv_warning"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            android:layout_gravity="top"
             android:src="@mipmap/icon_warning"
             android:layout_width="16.5dp"
             android:layout_height="16.5dp"/>
-        <TextView
-            android:layout_marginStart="2.5dp"
-            android:text="检查到无障碍服务需要开启!"
-            android:textSize="16sp"
-
+        <ImageView
+            app:layout_constraintStart_toEndOf="@id/iv_warning"
+            android:layout_marginStart="6dp"
+            android:src="@mipmap/icon_tips"
+            android:textSize="15sp"
             android:textColor="#FF120E"
-            android:layout_width="wrap_content"
+            android:layout_width="320dp"
             android:layout_height="match_parent"/>
-    </androidx.appcompat.widget.LinearLayoutCompat>
+    </androidx.constraintlayout.widget.ConstraintLayout>
     <Button
         android:id="@+id/btn_accessibility"
         app:layout_constraintTop_toBottomOf="@id/layout_iv"

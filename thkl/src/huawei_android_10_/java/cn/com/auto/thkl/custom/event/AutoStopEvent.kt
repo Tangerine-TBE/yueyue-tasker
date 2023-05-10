@@ -14,6 +14,7 @@ import cn.com.auto.thkl.custom.event.base.EventController
 import cn.com.auto.thkl.custom.event.base.MsgType
 import cn.com.auto.thkl.custom.task.TaskProperty
 import cn.com.auto.thkl.custom.task.TaskType
+import kotlin.concurrent.thread
 
 @RequiresApi(Build.VERSION_CODES.P)
 class AutoStopEvent(override val task: TaskProperty) :
@@ -38,6 +39,7 @@ class AutoStopEvent(override val task: TaskProperty) :
                     intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                     App.service!!.startActivity(intent)
                     currentStep++
+                    runEvent(Runnable {App.service.performGlobalAction(AccessibilityService.GLOBAL_ACTION_HOME)  },2)
                 }
             }
 

@@ -46,11 +46,8 @@ class LoginActivity : BaseActivity() {
 
 
     override fun setStatusBar() {
-        ImmersionBar.with(this)
-            .statusBarColor(android.R.color.transparent)
-            .statusBarDarkFont(true)
-            .navigationBarColor(android.R.color.transparent)
-            .init()
+        ImmersionBar.with(this).statusBarColor(android.R.color.transparent).statusBarDarkFont(true)
+            .navigationBarColor(android.R.color.transparent).init()
     }
 
     /*退出登录*//*第一次登录*//*二次登录*/
@@ -167,6 +164,14 @@ class LoginActivity : BaseActivity() {
             if (!account.isNullOrEmpty() && !cipher.isNullOrEmpty()) {
                 et_account.setText(account)
                 et_cipher.setText(cipher)
+            } else {
+                if (account.isNullOrEmpty()) {
+                    AccessibilityViewModel.showBottomToast.value = "请输入账号!"
+                    return
+                }
+                if (cipher.isNullOrEmpty()) {
+                    AccessibilityViewModel.showBottomToast.value = "请输入密码"
+                }
             }
         }
 
@@ -188,7 +193,6 @@ class LoginActivity : BaseActivity() {
     @RequiresApi(Build.VERSION_CODES.M)
     @SuppressLint("CommitPrefEdits")
     private fun start(account: String, cipher: String) {
-        AccessibilityViewModel.showTopToast.value = "正在自动登录"
         GlobalScope.launch {
             withContext(Dispatchers.Main) {
                 showProcessDialog()
@@ -209,10 +213,10 @@ class LoginActivity : BaseActivity() {
                         SP.putString(Constant.USER_NAME, it.toString())
                     }
                     JSONObject.parseObject(string).getString("loginName").let {
-                        if (!TextUtils.isEmpty(it)){
+                        if (!TextUtils.isEmpty(it)) {
                             SP.putString(Constant.LOGIN_NAME, it.toString())
-                        }else{
-                            SP.putString(Constant.LOGIN_NAME,"未知")
+                        } else {
+                            SP.putString(Constant.LOGIN_NAME, "未知")
                         }
                     }
                     JSONObject.parseObject(string).getInteger("deviceId").let {

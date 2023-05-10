@@ -1,6 +1,7 @@
 package cn.com.auto.thkl.activity
 
 import android.content.Intent
+import android.graphics.Color
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
@@ -9,7 +10,11 @@ import cn.com.auto.thkl.Constant
 import cn.com.auto.thkl.R
 import cn.com.auto.thkl.base.BaseActivity
 import cn.com.auto.thkl.model.AccessibilityViewModel
+import cn.com.auto.thkl.utils.L
 import cn.com.auto.thkl.utils.SP
+import com.afollestad.materialdialogs.DialogAction
+import com.afollestad.materialdialogs.MaterialDialog
+import com.blankj.utilcode.util.DeviceUtils
 import com.gyf.barlibrary.ImmersionBar
 import kotlinx.android.synthetic.main.activity_main_yueyue.*
 
@@ -72,17 +77,20 @@ class MainActivity : BaseActivity() {
         btn_logout.setOnClickListener {
             AccessibilityViewModel.logout.value = this@MainActivity
         }
-        btn_restart.setOnClickListener{
-            AccessibilityViewModel.restartTask.value =true
+        btn_restart.setOnClickListener {
+            AccessibilityViewModel.restartTask.value = true
         }
-        btn_shutdown.setOnClickListener{
+        btn_shutdown.setOnClickListener {
             AccessibilityViewModel.shutDownTask.value = true
         }
-        btn_exit.setOnClickListener{
+        btn_exit.setOnClickListener {
             AccessibilityViewModel.exitTask.value = true
         }
         if (AccessibilityViewModel.hearBeatTask.value != true) {
             AccessibilityViewModel.hearBeatTask.value = true
+        }
+        if (AccessibilityViewModel.onDate.value != null) {
+            AccessibilityViewModel.onDate.value = SP.getString(Constant.EXPIRY_TIME)
         }
     }
 
@@ -93,10 +101,39 @@ class MainActivity : BaseActivity() {
 
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onResume() {
-        super.onResume()
+        super.onResume()/*判断手机兼容问题*/
+//        if(AccessibilityViewModel.normalStartService.value == true){
+//            return
+//        }
+//        MaterialDialog.Builder(this).title("欢迎使用阅阅乐")
+//            .contentColor(Color.parseColor("#666666"))
+//            .content("你的手机机型[${DeviceUtils.getManufacturer()}:${DeviceUtils.getModel()}]未认证,可尝试使用品牌[5G]默认参数进行自动部署,收益可能受轻微影响。部署时间可能较长(包括系统设置和下载安装任务APP),请耐心等待。")
+//            .negativeText("手动部署").negativeColor(Color.parseColor("#FF120E"))
+//            .neutralText("已完成部署").neutralColor(Color.parseColor("#5C58BF"))
+//            .positiveText("自动部署").positiveColor(Color.parseColor("#09BC21"))
+//            .onNegative { _, _ ->
+//                /*手动部署*/
+//            }.onNeutral { _, _ ->
+//                /*已完成部署*/
+//                if (AccessibilityViewModel.normalStartService.value != true) {
+//                    AccessibilityViewModel.normalStartService.value = true
+//                }
+//                if (AccessibilityViewModel.settingTask.value != true) {/*清除所有准备要进行的消息*/
+//                    AccessibilityViewModel.settingTask.value = true
+//                }
+//            }.onPositive { _, _ ->
+//                /*自动部署*/
+//                if (AccessibilityViewModel.normalStartService.value != true) {
+//                    AccessibilityViewModel.normalStartService.value = true
+//                }
+//                if (AccessibilityViewModel.settingTask.value != true) {/*清除所有准备要进行的消息*/
+//                    AccessibilityViewModel.settingTask.value = true
+//                }
+//            }.show()
+
         if (AccessibilityViewModel.normalStartService.value != true) {
             AccessibilityViewModel.normalStartService.value = true
-        }/*第一次登录*//*第一次安装  FIRST_LOGIN = false*/
+        }
         if (AccessibilityViewModel.settingTask.value != true) {/*清除所有准备要进行的消息*/
             AccessibilityViewModel.settingTask.value = true
         }

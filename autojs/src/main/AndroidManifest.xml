@@ -43,11 +43,6 @@
             android:theme="@style/ScriptTheme.Transparent" />
 
 
-        <service
-            android:name="com.stardust.autojs.core.image.capture.CaptureForegroundService"
-            android:exported="false"
-            android:foregroundServiceType="mediaProjection" />
-
     </application>
 
 </manifest>
