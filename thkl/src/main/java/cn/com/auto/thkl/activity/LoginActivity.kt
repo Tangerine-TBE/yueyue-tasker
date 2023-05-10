@@ -164,14 +164,6 @@ class LoginActivity : BaseActivity() {
             if (!account.isNullOrEmpty() && !cipher.isNullOrEmpty()) {
                 et_account.setText(account)
                 et_cipher.setText(cipher)
-            } else {
-                if (account.isNullOrEmpty()) {
-                    AccessibilityViewModel.showBottomToast.value = "请输入账号!"
-                    return
-                }
-                if (cipher.isNullOrEmpty()) {
-                    AccessibilityViewModel.showBottomToast.value = "请输入密码"
-                }
             }
         }
 
@@ -187,6 +179,14 @@ class LoginActivity : BaseActivity() {
             SP.putString(Constant.account, accountString)
             SP.putString(Constant.cipher, cipherString)
             start(accountString, cipherString)
+        }else{
+            if (accountString.isEmpty()) {
+                AccessibilityViewModel.showBottomToast.value = "请输入账号!"
+                return
+            }
+            if (cipherString.isEmpty()) {
+                AccessibilityViewModel.showBottomToast.value = "请输入密码"
+            }
         }
     }
 
