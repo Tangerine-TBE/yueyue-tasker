@@ -38,7 +38,7 @@ class AutoUninstallEvent(
             2 -> {
                 if (event!!.className == "com.android.settings.applications.InstalledAppDetailsTop" && event.packageName == "com.android.settings") {
                     runEvent {
-                      val targetList =  App.service.rootInActiveWindow!!.findAccessibilityNodeInfosByText("卸载")
+                      val targetList =App.service.rootInActiveWindow!!.findAccessibilityNodeInfosByText("卸载")
                         if (targetList.isEmpty()){
                             return@runEvent
                         }
@@ -80,7 +80,9 @@ class AutoUninstallEvent(
                 }
             }
             4 ->{
-                EventController.INSTANCE.removeEvent(this, MsgType.SUCCESS)/*开启下一个任务*/
+                runEvent{
+                    EventController.INSTANCE.removeEvent(this, MsgType.SUCCESS)/*开启下一个任务*/
+                }
             }
 
         }

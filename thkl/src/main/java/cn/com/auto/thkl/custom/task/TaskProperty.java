@@ -10,6 +10,7 @@ public class TaskProperty {
     private String type;
     private boolean keep;
     private Job job;
+    private String appName;
 
     private long defaultTimeOut;
 
@@ -30,13 +31,30 @@ public class TaskProperty {
         this.keep = keep;
     }
 
-    public TaskProperty(TaskType taskType, String packName, String pathName, String type, boolean keep, Job job) {
+    public TaskProperty(TaskType taskType, String packName, String pathName, String type, boolean keep, Job job,String appName) {
         this.taskType = taskType;
         this.packName = packName;
         this.pathName = pathName;
         this.type = type;
         this.keep = keep;
         this.job = job;
+        this.appName = appName;
+    }
+
+    public String getAppName() {
+        return appName;
+    }
+
+    public void setAppName(String appName) {
+        this.appName = appName;
+    }
+
+    public long getDefaultTimeOut() {
+        return defaultTimeOut;
+    }
+
+    public void setDefaultTimeOut(long defaultTimeOut) {
+        this.defaultTimeOut = defaultTimeOut;
     }
 
     public TaskType getTaskType() {

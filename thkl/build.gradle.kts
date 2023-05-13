@@ -94,6 +94,12 @@ android {
     productFlavors {
         create("huawei_android_10_") {
             buildConfigField("String", "CHANNEL", "\"common\"")
+            buildConfigField("Boolean","DEBUG_TEST","false")
+            manifestPlaceholders.putAll(mapOf("appName" to "阅阅赚" ))
+        }
+        create("huawei_android_10_debug"){
+            buildConfigField("String", "CHANNEL", "\"common\"")
+            buildConfigField("Boolean","DEBUG_TEST","true")
             manifestPlaceholders.putAll(mapOf("appName" to "阅阅赚" ))
         }
         create("huawei_android_9_"){

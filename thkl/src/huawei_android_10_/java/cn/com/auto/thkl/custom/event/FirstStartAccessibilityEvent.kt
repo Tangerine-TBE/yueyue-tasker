@@ -31,30 +31,22 @@ class FirstStartAccessibilityEvent(
     override fun start(service: AccessibilityService, event: AccessibilityEvent?) {
         when (currentStep) {
             1 -> {
-                shouldQuick = false
-                val rootWindow = App.service.rootInActiveWindow
-                if (rootWindow != null){
-                    val targetList = rootWindow.findAccessibilityNodeInfosByText("应用市场")
-                    if (targetList!!.isNotEmpty()) {
-                        runEvent {
+                runEvent {
+                    val rootWindow = App.service.rootInActiveWindow
+                    if (rootWindow != null) {
+                        val targetList = rootWindow.findAccessibilityNodeInfosByText("应用市场")
+                        if (targetList!!.isNotEmpty()) {
+                            EventController.INSTANCE.removeEvent(this, MsgType.SUCCESS)/*开启下一个任务*/
                             val intent = Intent(App.service, LoginActivity::class.java)
                             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                             App.service.startActivity(intent)
-                            EventController.INSTANCE.removeEvent(this, MsgType.SUCCESS)/*开启下一个任务*/
                             return@runEvent
                         }
                     }
-                }
-                back(service)
-                shouldQuick = true
-                thread {
-                    while (shouldQuick){
-                        Thread.sleep(500)
-                        if (shouldQuick){
-                            back(service)
-                        }
-                        return@thread
-                    }
+                    back(service)
+                    runEvent({
+                        back(service)
+                    },0.2f)
                 }
 
             }

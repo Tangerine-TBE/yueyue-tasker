@@ -46,7 +46,7 @@ class AutoCheckAlpayEvent(override val task: TaskProperty) :
                             AccessibilityViewModel.report.value = "支付宝没有登录"
                         }
                         EventController.INSTANCE.removeEvent(this, MsgType.SUCCESS)/*开启下一个任务*/
-                    },2)
+                    },2f)
                 }
             }
 

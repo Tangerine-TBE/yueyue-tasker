@@ -8,6 +8,7 @@ import cn.com.auto.thkl.activity.LoginActivity
 import cn.com.auto.thkl.custom.event.*
 import cn.com.auto.thkl.custom.task.TaskProperty
 import cn.com.auto.thkl.custom.task.TaskType
+import com.blankj.utilcode.util.AppUtils
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import java.util.*
@@ -51,7 +52,7 @@ object SuspendEventManager {
                         "",
                         false,
                         job
-                    )
+                    ,AppUtils.getAppName())
                 )
             ).execute(object : EventAction.OnEventCompleted {
                 override fun eventCompleted(name: String) {
@@ -59,6 +60,16 @@ object SuspendEventManager {
                     continuation.resume(name)
                 }
             })
+        }
+    }
+    suspend fun suspendAutoSysEvent(taskProperty: TaskProperty){
+        suspendCoroutine<String> { continuation ->
+            EventController.INSTANCE.addEvent(AutoSysSetEvent(taskProperty))
+                .execute(object :EventAction.OnEventCompleted{
+                    override fun eventCompleted(name: String) {
+                        continuation.resume(name)
+                    }
+                })
         }
     }
 

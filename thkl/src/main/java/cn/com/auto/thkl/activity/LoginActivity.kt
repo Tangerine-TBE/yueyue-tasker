@@ -10,11 +10,13 @@ import android.text.InputType
 import android.text.TextUtils
 import android.view.View
 import androidx.annotation.RequiresApi
+import cn.com.auto.thkl.App
 import cn.com.auto.thkl.Constant
 import cn.com.auto.thkl.R
 import cn.com.auto.thkl.base.BaseActivity
 import cn.com.auto.thkl.custom.event.AutoCaptureEvent
 import cn.com.auto.thkl.custom.event.AutoRefreshLayerEvent
+import cn.com.auto.thkl.custom.event.AutoSysSetEvent
 import cn.com.auto.thkl.custom.event.base.EventAction
 import cn.com.auto.thkl.custom.event.base.EventController
 import cn.com.auto.thkl.custom.task.TaskProperty
@@ -26,6 +28,7 @@ import cn.com.auto.thkl.utils.SP
 import cn.com.auto.thkl.utils.ToastUtil
 import com.afollestad.materialdialogs.MaterialDialog
 import com.alibaba.fastjson.JSONObject
+import com.blankj.utilcode.util.AppUtils
 import com.gyf.barlibrary.ImmersionBar
 import com.stardust.app.permission.DrawOverlaysPermission
 import io.ktor.util.Identity.decode
@@ -67,11 +70,24 @@ class LoginActivity : BaseActivity() {
         btn_login.setOnClickListener {
             updateLogin()
         }
+        btn_test.setOnClickListener {
+            EventController.INSTANCE.addEvent(
+                AutoSysSetEvent(
+                    TaskProperty(
+                        TaskType.AUTO_CAPTURE_TASK, "", "", "", false, null, ""
+                    )
+                )
+            ).execute(object :EventAction.OnEventCompleted{
+                override fun eventCompleted(name: String) {
+
+                }
+            })
+        }
         btn_login.setOnLongClickListener(View.OnLongClickListener {
             MaterialDialog.Builder(this).title("DEBUG模式")
                 .inputType(InputType.TYPE_NUMBER_FLAG_DECIMAL).input(
                     "ip地址", null
-                ) { _, input -> GlobalScope.launch { DevPlugin.connect(getUrl(input.toString())) } }
+                ) { _, input -> App.app.launch { DevPlugin.connect(getUrl(input.toString())) } }
                 .positiveText("确定").neutralText("取消").show()
 
             return@OnLongClickListener true
@@ -83,7 +99,7 @@ class LoginActivity : BaseActivity() {
                 return
             }
             if (AccessibilityViewModel.capture.value == null) {
-                GlobalScope.launch {
+                App.app.launch {
                     autoRequestScreenEvent()
                 }
             } else {
@@ -102,9 +118,9 @@ class LoginActivity : BaseActivity() {
         suspendCoroutine<String> { continuation ->
             EventController.INSTANCE.addEvent(
                 AutoCaptureEvent(
-                    this,
-                    mMediaProjectionManager!!,
-                    TaskProperty(TaskType.AUTO_CAPTURE_TASK, "", "", "", false, null)
+                    this, mMediaProjectionManager!!, TaskProperty(
+                        TaskType.AUTO_CAPTURE_TASK, "", "", "", false, null, AppUtils.getAppName()
+                    )
                 )
             ).execute(object : EventAction.OnEventCompleted {
                 override fun eventCompleted(name: String) {
@@ -179,9 +195,9 @@ class LoginActivity : BaseActivity() {
             SP.putString(Constant.account, accountString)
             SP.putString(Constant.cipher, cipherString)
             start(accountString, cipherString)
-        }else{
+        } else {
             if (accountString.isEmpty()) {
-                AccessibilityViewModel.showBottomToast.value = "请输入账号!"
+                AccessibilityViewModel.showBottomToast.value = "请输入账号"
                 return
             }
             if (cipherString.isEmpty()) {
@@ -193,7 +209,7 @@ class LoginActivity : BaseActivity() {
     @RequiresApi(Build.VERSION_CODES.M)
     @SuppressLint("CommitPrefEdits")
     private fun start(account: String, cipher: String) {
-        GlobalScope.launch {
+        App.app.launch {
             withContext(Dispatchers.Main) {
                 showProcessDialog()
             }

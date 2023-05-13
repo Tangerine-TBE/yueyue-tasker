@@ -39,7 +39,7 @@ class AutoStopEvent(override val task: TaskProperty) :
                     intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                     App.service!!.startActivity(intent)
                     currentStep++
-                    runEvent(Runnable {App.service.performGlobalAction(AccessibilityService.GLOBAL_ACTION_HOME)  },2)
+                    runEvent(Runnable {App.service.performGlobalAction(AccessibilityService.GLOBAL_ACTION_HOME)  },2f)
                 }
             }
 
@@ -92,9 +92,12 @@ class AutoStopEvent(override val task: TaskProperty) :
                                     service = service,
                                     event
                                 )
-                                EventController.INSTANCE.removeEvent(
-                                    this, MsgType.SUCCESS
-                                )/*开启下一个任务*/
+                                runEvent{
+                                    EventController.INSTANCE.removeEvent(
+                                        this, MsgType.SUCCESS
+                                    )/*开启下一个任务*/
+                                }
+
                             }
                         }
                     }

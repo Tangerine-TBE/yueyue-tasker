@@ -50,7 +50,9 @@ class AutoCaptureEvent(
                             service = service,
                             event
                         )
-                        EventController.INSTANCE.removeEvent(this,MsgType.SUCCESS)
+                        runEvent{
+                            EventController.INSTANCE.removeEvent(this,MsgType.SUCCESS)
+                        }
                     }
                 }
 

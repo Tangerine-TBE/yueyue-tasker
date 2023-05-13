@@ -136,6 +136,11 @@ class AutoInstallPackEvent(
                         AccessibilityViewModel.report.postValue("安装失败")
                         EventController.INSTANCE.removeEvent(this, MsgType.FAILURE)
                     }
+                }else if (event.packageName == "com.huawei.appmarket" && event.className == "com.huawei.appgallery.systeminstalldistservice.adsview.activity.InstallSuccessActivity"){
+                    runEvent {
+                        threadController = false
+                        EventController.INSTANCE.removeEvent(this, MsgType.SUCCESS)
+                    }
                 }
             }
         }

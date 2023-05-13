@@ -59,7 +59,9 @@ class AutoRestartEvent(override val task: TaskProperty) :
                             service = service,
                             event!!
                         )
-                        EventController.INSTANCE.removeEvent(this, MsgType.SUCCESS)/*开启下一个任务*/
+                        runEvent{
+                            EventController.INSTANCE.removeEvent(this, MsgType.SUCCESS)/*开启下一个任务*/
+                        }
                     }
                 }
             }

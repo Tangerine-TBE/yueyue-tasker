@@ -10,24 +10,33 @@ import cn.com.auto.thkl.custom.event.base.EventController
 import cn.com.auto.thkl.custom.event.base.MsgType
 import cn.com.auto.thkl.custom.task.TaskProperty
 
-class AutoRefreshLayerEvent(override val task: TaskProperty) :EventAction("自动刷新界面",EventController.SYSTEM_EVENT),Event {
+class AutoRefreshLayerEvent(override val task: TaskProperty) :
+    EventAction("自动刷新界面", EventController.SYSTEM_EVENT), Event {
     override fun start(service: AccessibilityService, event: AccessibilityEvent?) {
-        when(currentStep){
-            1 ->{
-                runTime++
-                currentStep++
-                App.service.performGlobalAction(AccessibilityService.GLOBAL_ACTION_HOME)
-            }
-            2 ->{
-                runTime++
-                val targetList =  App.service.rootInActiveWindow!!.findAccessibilityNodeInfosByText("阅阅赚")
-                if (targetList.isEmpty()){
-                    return
+        when (currentStep) {
+            1 -> {
+                runEvent {
+                    runTime++
+                    currentStep++
+                    App.service.performGlobalAction(AccessibilityService.GLOBAL_ACTION_HOME)
                 }
-                runTime++
-                val target = targetList[0]
-                target?.performAction(AccessibilityNodeInfoCompat.ACTION_CLICK)
-                EventController.INSTANCE.removeEvent(this,MsgType.SUCCESS)
+
+            }
+
+            2 -> {
+                runEvent {
+                    runTime++
+                    val targetList =
+                        App.service.rootInActiveWindow!!.findAccessibilityNodeInfosByText("阅阅赚")
+                    if (targetList.isEmpty()) {
+                        return@runEvent
+                    }
+                    runTime++
+                    val target = targetList[0]
+                    target?.performAction(AccessibilityNodeInfoCompat.ACTION_CLICK)
+                    EventController.INSTANCE.removeEvent(this, MsgType.SUCCESS)
+                }
+
             }
 
         }

@@ -48,7 +48,7 @@ class AutoCheckWXLoginEvent(override val task: TaskProperty) :
                         }
                         EventController.INSTANCE.removeEvent(this, MsgType.SUCCESS)/*开启下一个任务*/
 
-                    }, 3)
+                    }, 3f)
                 }
             }
         }

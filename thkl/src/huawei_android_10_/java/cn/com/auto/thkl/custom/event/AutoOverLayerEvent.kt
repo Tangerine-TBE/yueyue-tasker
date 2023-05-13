@@ -25,7 +25,7 @@ class AutoOverLayerEvent(override val task: TaskProperty) : EventAction("自动�
                    val intent = DrawOverlaysPermission.getCanDrawOverlaysIntent(task.packName)
                     intent!!.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                     App.service.startActivity(intent)
-                },2)
+                },2f)
             }
             2 ->{
                 if (event!!.className == "com.android.settings.Settings\$AppDrawOverlaySettingsActivity" ){

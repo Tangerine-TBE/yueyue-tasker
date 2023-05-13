@@ -27,6 +27,9 @@ import com.stardust.app.GlobalAppContext
 import com.stardust.autojs.core.ui.inflater.ImageLoader
 import com.stardust.autojs.core.ui.inflater.util.Drawables
 import com.stardust.theme.ThemeColor
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.cancel
 import me.jessyan.autosize.AutoSize
 import me.jessyan.autosize.AutoSizeConfig
 import me.jessyan.autosize.onAdaptListener
@@ -38,7 +41,7 @@ import java.lang.ref.WeakReference
  * Created by Stardust on 2017/1/27.
  */
 
-class App : MultiDexApplication() {
+class App : MultiDexApplication(),CoroutineScope by CoroutineScope(Dispatchers.IO) {
     lateinit var dynamicBroadcastReceivers: DynamicBroadcastReceivers
         private set
     override fun onCreate() {
@@ -61,6 +64,10 @@ class App : MultiDexApplication() {
         }
     }
 
+    override fun onTerminate() {
+        cancel()
+        super.onTerminate()
+    }
 
     private fun init() {
         SP.init(this)
@@ -79,6 +86,7 @@ class App : MultiDexApplication() {
         TimedTaskScheduler.init(this)
         initDynamicBroadcastReceivers()
     }
+
 
 
     @SuppressLint("CheckResult")
@@ -170,6 +178,7 @@ class App : MultiDexApplication() {
             }
         })
     }
+
 
     companion object {
         private lateinit var instance: WeakReference<App>

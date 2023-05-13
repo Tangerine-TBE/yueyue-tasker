@@ -14,65 +14,54 @@ import cn.com.auto.thkl.utils.L
 import kotlin.concurrent.thread
 
 @RequiresApi(Build.VERSION_CODES.P)
-class AutoClearEvent(override val task: TaskProperty) : EventAction("自动清理", EventController.SYSTEM_EVENT) {
+class AutoClearEvent(override val task: TaskProperty) :
+    EventAction("自动清理", EventController.SYSTEM_EVENT) {
     override var currentStep = 1
     override var runTime: Int = 1
     override var isWorking: Boolean = false
-
+    private var isChanged:Boolean = false
 
     override fun start(service: AccessibilityService, event: AccessibilityEvent?) {
         when (currentStep) {
             1 -> {
-                runEvent {
+                runEvent{
                     currentStep++
-                    var perform = false
+                    App.service.performGlobalAction(AccessibilityService.GLOBAL_ACTION_RECENTS)/*打开后一直等待*/
                     thread {
-                        while (!perform){
-                            perform = App.service.performGlobalAction(AccessibilityService.GLOBAL_ACTION_RECENTS)
-                            L.e("自动清理${perform}")
-                            Thread.sleep(2000)
-                        }
+                        Thread.sleep(3000)
+                        isChanged = true
+                        val targetList =
+                            App.service.rootInActiveWindow!!.findAccessibilityNodeInfosByViewId("com.huawei.android.launcher:id/clear_all_recents_image_button")
+                        L.e("按钮数量：${targetList.size}")
+                        if (targetList.isEmpty()) {
+                            App.service.performGlobalAction(AccessibilityService.GLOBAL_ACTION_HOME)
+                            currentStep++
+                        } else {
+                            val target = targetList[0]
+                            target.getBoundsInScreen(rect)
+                            currentStep++
+                            clickPoint(
+                                ((rect.right + rect.left) / 2).toFloat(),
+                                ((rect.bottom + rect.top) / 2).toFloat(),
+                                service = service,
+                                event!!
+                            )
+                        }/*开启下一个任务*/
                     }
-
-                    runEvent({
-                        /**出现最近无任务的处理方式*/
-                        currentStep++
-                        back(service)
-                    },3)
                 }
+
             }
 
             2 -> {
-                if (event!!.className == "com.huawei.android.launcher.unihome.UniHomeLauncher" && event.packageName == "com.huawei.android.launcher") {
-                    runEvent {
-                        val targetList =  App.service.rootInActiveWindow!!.findAccessibilityNodeInfosByViewId("com.huawei.android.launcher:id/overview_panel2")
-                        if (targetList.isEmpty()){
-                            EventController.INSTANCE.removeEvent(this, MsgType.SUCCESS)/*开启下一个任务*/
-                            return@runEvent
-                        }
-                        var target =targetList[0]
-                        L.e("${target!!.childCount}")
-                        if (target.childCount > 0) {
-                            target = service.rootInActiveWindow.findAccessibilityNodeInfosByViewId("com.huawei.android.launcher:id/clear_all_recents_image_button")[0]
-                            if (target != null) {
-                                target.getBoundsInScreen(rect)
-                                currentStep++
-                                clickPoint(
-                                    ((rect.right + rect.left) / 2).toFloat(),
-                                    ((rect.bottom + rect.top) / 2).toFloat(),
-                                    service = service,
-                                    event
-                                )
-                            }
-                        }
-                    }
-                }
+                runEvent({
+                    /**出现最近无任务的处理方式*/
+
+                },1f)
+
             }
-            3 -> {
-                if (event!!.className == "com.huawei.android.launcher.unihome.UniHomeLauncher") {
-                    runEvent {
-                        EventController.INSTANCE.removeEvent(this, MsgType.SUCCESS)/*开启下一个任务*/
-                    }
+            3->{
+                runEvent {
+                    EventController.INSTANCE.removeEvent(this, MsgType.SUCCESS)
                 }
             }
         }

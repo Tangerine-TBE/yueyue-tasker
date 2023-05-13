@@ -36,7 +36,7 @@ abstract class EventAction(eventName: String, eventType: Set<Int>) : Event {
         App.handler.removeCallbacksAndMessages(null)
         App.handler.postDelayed(runnable, 1000)
     }
-    fun runEvent(runnable: Runnable,delay:Int){
+    fun runEvent(runnable: Runnable,delay:Float){
         runTime++
         App.handler.removeCallbacksAndMessages(null)
         App.handler.postDelayed(runnable, (delay * 1000).toLong())
