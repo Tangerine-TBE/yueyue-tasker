@@ -3,13 +3,12 @@
     android:layout_width="match_parent"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_height="match_parent">
-    <ImageView
+    <cn.com.auto.thkl.weight.LoadingView
         android:id="@+id/iv_update"
         app:layout_constraintTop_toTopOf="parent"
         android:layout_marginTop="80dp"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        android:src="@mipmap/icon_update"
         android:layout_width="307.5dp"
         android:layout_height="314dp"/>
     <TextView

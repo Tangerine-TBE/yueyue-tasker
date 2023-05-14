@@ -1,6 +1,10 @@
 package cn.com.auto.thkl.activity
 
+import android.animation.Animator
+import android.animation.AnimatorListenerAdapter
+import android.animation.ObjectAnimator
 import android.content.Intent
+import android.view.animation.LinearInterpolator
 import androidx.lifecycle.lifecycleScope
 import cn.com.auto.thkl.App
 import cn.com.auto.thkl.BuildConfig
@@ -9,6 +13,7 @@ import cn.com.auto.thkl.base.BaseActivity
 import cn.com.auto.thkl.net.Api
 import com.alibaba.fastjson.JSONObject
 import com.gyf.barlibrary.ImmersionBar
+import kotlinx.android.synthetic.main.activity_check_update.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -21,6 +26,7 @@ import java.io.OutputStream
 
 class CheckUpdateActivity : BaseActivity() {
     private val mApkPath = App.app.applicationContext.filesDir.absolutePath + "/apks/"
+    private lateinit var  animator: Animator
     override fun setStatusBar() {
         ImmersionBar.with(this)
             .statusBarColor(android.R.color.transparent)
@@ -36,7 +42,22 @@ class CheckUpdateActivity : BaseActivity() {
     }
 
     override fun initListener() {
+         animator = ObjectAnimator.ofFloat(iv_update, "offsetAngle", 360f)
+        animator.interpolator = LinearInterpolator()
+        animator.duration = 6 * 1000
+        animator.addListener(object : AnimatorListenerAdapter() {
+            override fun onAnimationEnd(animation: Animator) {
+                val n = iv_update.offsetAngle / 360
+                (animator as ObjectAnimator?)!!.setFloatValues(n * 360 + 360)
+                animator.start()
+            }
+        })
+        animator.start()
+    }
 
+    override fun onDestroy() {
+        super.onDestroy()
+        animator.cancel()
     }
 
     override fun onResume() {
