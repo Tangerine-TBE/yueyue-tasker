@@ -10,39 +10,35 @@ import retrofit2.http.*
 
 interface ApiService {
 
-    @GET ("/api/client/getClientInfo")
-    suspend fun getClientInfo(@Query("osName") osName:String):BaseRsp
+    @GET("/api/client/getClientInfo")
+    suspend fun getClientInfo(@Query("osName") osName: String): BaseRsp
 
     @GET("/api/taskDevice/queryMaintainInfo")
     suspend fun queryMaintainInfo(@Header("access_token") token: String): BaseRsp
 
     @POST("/api/taskDevice/appExecutionFeedback")
-     fun appExecutionFeedback(
-        @Header("access_token") token: String,
-        @Body files: MultipartBody
+    fun appExecutionFeedback(
+        @Header("access_token") token: String, @Body files: MultipartBody
     ): Observable<BaseRsp>
 
     @GET("/api/taskDevice/queryAppTask")
     suspend fun queryAppTask(
-        @Header("access_token") token: String,
-        @Query("updateTask") query: Boolean
-    ):BaseRsp
+        @Header("access_token") token: String, @Query("updateTask") query: Boolean
+    ): BaseRsp
 
     @GET("/api/taskDevice/scriptDetail")
     suspend fun scriptDetail(
-        @Header("access_token") token: String,
-        @Query("scriptId") scriptId: String
-    ):BaseRsp
+        @Header("access_token") token: String, @Query("scriptId") scriptId: String
+    ): BaseRsp
 
     @POST("/api/taskDevice/scriptExecutionFeedback")
-     suspend fun scriptExecutionFeedback(
-        @Header("access_token") token: String?,
-        @Body body: RequestBody
+    suspend fun scriptExecutionFeedback(
+        @Header("access_token") token: String?, @Body body: RequestBody
     ): BaseRsp
 
     @FormUrlEncoded
     @POST("/api/taskLogin/taskSignIn")
-    suspend  fun taskSignIn(
+    suspend fun taskSignIn(
         @Field("password") password: String?,
         @Field("username") username: String?,
         @Field("validationType") validationType: Int
@@ -62,5 +58,13 @@ interface ApiService {
     @Streaming
     @GET
     suspend fun download(@Url url: String?): Response<ResponseBody>
+
+    @FormUrlEncoded
+    @POST("/api/taskDevice/deviceReportProfit")
+    suspend fun deviceReportProfit(
+        @Header("access_token") token: String,
+        @Field("money") money: Number,
+        @Field("runRecordId") runRecordId: Int
+    )
 
 }

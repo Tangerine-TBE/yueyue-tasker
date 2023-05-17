@@ -11,7 +11,6 @@ import cn.com.auto.thkl.custom.event.base.EventAction
 import cn.com.auto.thkl.custom.event.base.EventController
 import cn.com.auto.thkl.custom.event.base.MsgType
 import cn.com.auto.thkl.custom.task.TaskProperty
-import cn.com.auto.thkl.custom.task.TaskType
 
 @RequiresApi(Build.VERSION_CODES.P)
 class AutoUninstallEvent(
@@ -50,7 +49,6 @@ class AutoUninstallEvent(
                                 ((rect.right + rect.left) / 2).toFloat(),
                                 ((rect.bottom + rect.top) / 2).toFloat(),
                                 service = service,
-                                event
                             )
                         }
                     }
@@ -72,7 +70,6 @@ class AutoUninstallEvent(
                                 ((rect.right + rect.left) / 2).toFloat(),
                                 ((rect.bottom + rect.top) / 2).toFloat(),
                                 service = service,
-                                event
                             )
                         }
                     }

@@ -61,8 +61,8 @@ android {
             isUniversalApk = true
         }
     }
-    signingConfigs{
-        create("release"){
+    signingConfigs {
+        create("release") {
             keyPassword = "100344"
             keyAlias = "thkl"
             storeFile = File("./thkl.jks")
@@ -78,45 +78,54 @@ android {
                 "proguard-rules.pro"
             )
             signingConfig = signingConfigs.getByName("release")
-
+            manifestPlaceholders.putAll(mapOf("appName" to versions.name))
         }
-        debug{
+        debug {
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
             signingConfig = signingConfigs.getByName("release")
+            manifestPlaceholders.putAll(mapOf("appName" to versions.name))
         }
     }
 
     flavorDimensions.add("channel")
     productFlavors {
         create("huawei_android_10_") {
-            buildConfigField("String", "CHANNEL", "\"common\"")
-            buildConfigField("Boolean","DEBUG_TEST","false")
-            manifestPlaceholders.putAll(mapOf("appName" to "阅阅赚" ))
+            buildConfigField("String", "SYSTEM_VALUE", "\"HuaWeiAndroid10\"")
         }
-        create("huawei_android_10_debug"){
-            buildConfigField("String", "CHANNEL", "\"common\"")
-            buildConfigField("Boolean","DEBUG_TEST","true")
-            manifestPlaceholders.putAll(mapOf("appName" to "阅阅赚" ))
+        create("huawei_android_9_") {
+            buildConfigField("String", "SYSTEM_VALUE", "\"HuaWeiAndroid9\"")
         }
-        create("huawei_android_9_"){
-            buildConfigField("String", "CHANNEL", "\"common\"")
-            manifestPlaceholders.putAll(mapOf("appName" to "阅阅赚" ))
+    }
+    android.applicationVariants.all {
+        outputs.all {
+            if (this is com.android.build.gradle.internal.api.ApkVariantOutputImpl) {
+                if (this.name.contains("arm64-v8a")) {
+                    this.outputFileName =
+                        "${versions.name}_${flavorName}_V${versionName}_v8a.apk"
+                } else if (this.name.contains("armeabi-v7a")) {
+                    this.outputFileName =
+                        "${versions.name}_${flavorName}_V${versionName}_v7a.apk"
+                } else {
+                    this.outputFileName =
+                        "${versions.name}_${flavorName}_V${versionName}_null.apk"
+                }
+            }
         }
     }
     sourceSets {
         getByName("main") {
             jniLibs.srcDirs("/libs")
         }
-        getByName("huawei_android_10_"){
-            java.srcDirs("src/main/java","src/huawei_android_10/java")
+        getByName("huawei_android_10_") {
+            java.srcDirs("src/main/java", "src/huawei_android_10/java")
             jniLibs.srcDirs("/libs")
         }
-        getByName("huawei_android_9_"){
-            java.srcDirs("src/main/java","src/huawei_android_9/java")
+        getByName("huawei_android_9_") {
+            java.srcDirs("src/main/java", "src/huawei_android_9/java")
             jniLibs.srcDirs("/libs")
         }
     }
@@ -136,14 +145,21 @@ android {
             )
         )
     }
+    greendao {
+        this.schemaVersion = 1
+        this.daoPackage = "cn.com.auto.thkl.db"
+    }
+
 
 }
 
 dependencies {
-    implementation ("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.4.3")
+    implementation("org.greenrobot:greendao:3.3.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.4.3")
     implementation("androidx.localbroadcastmanager:localbroadcastmanager:1.1.0")
     implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")
     implementation(project(mapOf("path" to ":easyfloat")))
+    implementation("androidx.constraintlayout:constraintlayout:2.1.4")
     val accompanist_version = "0.24.13-rc"
     implementation("com.google.accompanist:accompanist-permissions:0.24.13-rc")
     implementation("com.google.accompanist:accompanist-pager-indicators:$accompanist_version")
@@ -154,7 +170,7 @@ dependencies {
     implementation("com.google.accompanist:accompanist-insets-ui:$accompanist_version")
     implementation("com.google.accompanist:accompanist-systemuicontroller:$accompanist_version")
     implementation("com.google.accompanist:accompanist-webview:$accompanist_version")
-
+//    implementation (files("libs/bugly-4.1.9.2.aar"))
     implementation("org.chromium.net:cronet-embedded:76.3809.111")
     implementation("androidx.preference:preference-ktx:1.2.0")
     implementation("androidx.appcompat:appcompat:1.4.2") //
@@ -260,8 +276,8 @@ dependencies {
     implementation("io.coil-kt:coil-compose:2.0.0-rc03")
     implementation("com.squareup.okhttp3:logging-interceptor:3.4.1")
     implementation("com.gyf.immersionbar:immersionbar:2.3.2-beta05")
-    implementation ("com.alibaba:fastjson:1.2.8")
-    implementation ("com.blankj:utilcodex:1.31.1")
-    implementation ("me.jessyan:autosize:1.2.1")
+    implementation("com.alibaba:fastjson:1.2.8")
+    implementation("com.blankj:utilcodex:1.31.1")
+    implementation("me.jessyan:autosize:1.2.1")
 
 }

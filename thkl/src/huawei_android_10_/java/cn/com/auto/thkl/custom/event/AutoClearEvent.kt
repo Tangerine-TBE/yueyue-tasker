@@ -9,7 +9,6 @@ import cn.com.auto.thkl.custom.event.base.EventAction
 import cn.com.auto.thkl.custom.event.base.EventController
 import cn.com.auto.thkl.custom.event.base.MsgType
 import cn.com.auto.thkl.custom.task.TaskProperty
-import cn.com.auto.thkl.custom.task.TaskType
 import cn.com.auto.thkl.utils.L
 import kotlin.concurrent.thread
 
@@ -32,7 +31,6 @@ class AutoClearEvent(override val task: TaskProperty) :
                         isChanged = true
                         val targetList =
                             App.service.rootInActiveWindow!!.findAccessibilityNodeInfosByViewId("com.huawei.android.launcher:id/clear_all_recents_image_button")
-                        L.e("按钮数量：${targetList.size}")
                         if (targetList.isEmpty()) {
                             App.service.performGlobalAction(AccessibilityService.GLOBAL_ACTION_HOME)
                             currentStep++
@@ -44,7 +42,6 @@ class AutoClearEvent(override val task: TaskProperty) :
                                 ((rect.right + rect.left) / 2).toFloat(),
                                 ((rect.bottom + rect.top) / 2).toFloat(),
                                 service = service,
-                                event!!
                             )
                         }/*开启下一个任务*/
                     }

@@ -24,7 +24,7 @@ class AutoRequestPermissionEvent(
     override var currentStep = 1
     private var index = 0
     override var runTime: Int = 180
-    private val titleStringList = listOf("已允许", "已禁止")
+    private val titleStringList = listOf("已允许", "已禁止","查看所有权限")
     override var isWorking: Boolean = false
     private var beginFind = false
     private val clickedStringList = arrayListOf<String>()
@@ -57,93 +57,85 @@ class AutoRequestPermissionEvent(
                                 ((rect.right + rect.left) / 2).toFloat(),
                                 ((rect.bottom + rect.top) / 2).toFloat(),
                                 service = service,
-                                event
                             )
                         }
                     }
+                }else{
+                    if (event.className == "com.android.packageinstaller.permission.ui.ManagePermissionsActivity" && event.packageName == "com.android.permissioncontroller"){
+                        runEvent{
+                            back(service)
+                        }
+                    }
+
                 }
             }
 
             3 -> {
                 if (event!!.className == "com.android.packageinstaller.permission.ui.ManagePermissionsActivity" && event.packageName == "com.android.permissioncontroller") {
-                    runEvent {
-                        val windowInfo = service.rootInActiveWindow
+                    runEvent{
+                        val windowInfo = service!!.rootInActiveWindow
                         val nodeInfoList =
                             windowInfo.findAccessibilityNodeInfosByViewId("android:id/title")
-                        if (nodeInfoList.isEmpty()) {
-                            return@runEvent
-                        }
-                        val rvNodeInfoList =
-                            windowInfo.findAccessibilityNodeInfosByViewId("com.android.permissioncontroller:id/list")
-                        if (rvNodeInfoList.isEmpty()) {
-                            return@runEvent
-                        }
-                        if (!beginFind) {
-                            /*向上滚动，直到没有新目标出现*/
-                            type = EventController.TOUCH_EVENT
-                            index++
-                            scrollUpPoint(rvNodeInfoList[0], service, event)
-                            thread {
-                                Thread.sleep(3000)
-                                if (index != 0) {
-                                    beginFind = true
-                                    type = EventController.SYSTEM_EVENT
-                                    scrollDownAndFind(nodeInfoList, service, event, rvNodeInfoList)
+                        currentStep++
+                        for (i in 0 until nodeInfoList.size-1) {
+                            val currentString = nodeInfoList[i].text.toString()
+                            if (!clickedStringList.contains(currentString) && !titleStringList.contains(
+                                    currentString
+                                )
+                            ) {
+                                L.e("当前点击--${currentString}")
+                                clickedStringList.add(currentString)
+                                nodeInfoList[i].getBoundsInScreen(rect)
+                                clickPoint(
+                                    ((rect.right + rect.left) / 2).toFloat(),
+                                    ((rect.bottom + rect.top) / 2).toFloat(),
+                                    service = service,
+                                )
+                                return@runEvent
+                            } else {
+                                if (i == nodeInfoList.size - 2) {/*滚动*/
+                                    val rvNodeInfo =
+                                        windowInfo.findAccessibilityNodeInfosByViewId("com.android.permissioncontroller:id/list")[0]
+                                    currentStep--
+                                    type = EventController.TOUCH_EVENT
+                                    index++
+                                    scrollDownPoint(rvNodeInfo, service, event)/*5秒后发现滑动没有变化*/
+                                    thread {
+                                        runTime++
+                                        Thread.sleep(5000)
+                                        if (index != 0) {
+                                            SP.putBoolean(Constant.PERMISSION,true)
+                                            EventController.INSTANCE.removeEvent(this,MsgType.SUCCESS)/*开启下一个任务*/
+                                        }
+                                    }
                                 }
                             }
-                        } else {
-                            scrollDownAndFind(nodeInfoList, service, event, rvNodeInfoList)
                         }
-
                     }
                 } else if (event.className == "androidx.recyclerview.widget.RecyclerView" && event.packageName == "com.android.permissioncontroller") {/*滑动发生变化*/
-                    runEvent {
-                        if (index > 0) {
-                            index = 0
-                            L.e(/* str = */ "index${index}")
-
-                        }
+                    runEvent{
                         val windowInfo = service.rootInActiveWindow
                         val nodeInfoList =
                             windowInfo.findAccessibilityNodeInfosByViewId("android:id/title")
-                        if (nodeInfoList.isEmpty()) {
-                            return@runEvent
-                        }
-
-                        val rvNodeInfoList =
-                            windowInfo.findAccessibilityNodeInfosByViewId("com.android.permissioncontroller:id/list")
-                        if (rvNodeInfoList.isEmpty()) {
-                            return@runEvent
-                        }
-                        if (!beginFind) {
-                            index++
-                            scrollUpPoint(rvNodeInfoList[0], service, event)
-                            thread {
-                                Thread.sleep(3000)
-                                if (index != 0) {
-                                    beginFind = true
-                                    scrollDownAndFind(nodeInfoList, service, event, rvNodeInfoList)
+                        currentStep++
+                        for (i in 0 until nodeInfoList.size) {
+                            val currentString = nodeInfoList[i].text.toString()
+                            if (!clickedStringList.contains(currentString) && !titleStringList.contains(
+                                    currentString
+                                )
+                            ) {
+                                clickedStringList.add(currentString)
+                                nodeInfoList[i].getBoundsInScreen(rect)
+                                type = EventController.SYSTEM_EVENT
+                                clickPoint(
+                                    ((rect.right + rect.left) / 2).toFloat(),
+                                    ((rect.bottom + rect.top) / 2).toFloat(),
+                                    service = service,
+                                )
+                                if (index > 0) {
+                                    index--
                                 }
-                            }
-                        } else {
-                            currentStep++
-                            for (i in 0 until nodeInfoList.size) {
-                                val currentString = nodeInfoList[i].text.toString()
-                                if (!clickedStringList.contains(currentString) && !titleStringList.contains(
-                                        currentString
-                                    )
-                                ) {
-                                    clickedStringList.add(currentString)
-                                    nodeInfoList[i].getBoundsInScreen(rect)
-                                    type = EventController.SYSTEM_EVENT
-                                    clickPoint(
-                                        ((rect.right + rect.left) / 2).toFloat(),
-                                        ((rect.bottom + rect.top) / 2).toFloat(),
-                                        service = service,
-                                        event
-                                    )
-                                    return@runEvent
-                                }
+                                return@runEvent
                             }
                         }
                     }
@@ -166,7 +158,6 @@ class AutoRequestPermissionEvent(
                                     ((rect.right + rect.left) / 2).toFloat(),
                                     ((rect.bottom + rect.top) / 2).toFloat(),
                                     service = service,
-                                    event
                                 )
                             }
                         } else if (onlyRadioButtons.size > 0) {
@@ -176,7 +167,6 @@ class AutoRequestPermissionEvent(
                                     ((rect.right + rect.left) / 2).toFloat(),
                                     ((rect.bottom + rect.top) / 2).toFloat(),
                                     service = service,
-                                    event
                                 )
                             }
                         }
@@ -184,48 +174,6 @@ class AutoRequestPermissionEvent(
                             currentStep--
                             back(service)
                         }, 1000)
-                    }
-                }
-            }
-        }
-    }
-
-    private fun scrollDownAndFind(
-        nodeInfoList: MutableList<AccessibilityNodeInfo>,
-        service: AccessibilityService,
-        event: AccessibilityEvent?,
-        rvNodeInfoList: MutableList<AccessibilityNodeInfo>
-    ) {
-        currentStep++
-        for (i in 0 until nodeInfoList.size) {
-            val currentString = nodeInfoList[i].text.toString()
-            if (!clickedStringList.contains(currentString) && !titleStringList.contains(
-                    currentString
-                )
-            ) {
-                clickedStringList.add(currentString)
-                nodeInfoList[i].getBoundsInScreen(rect)
-                clickPoint(
-                    ((rect.right + rect.left) / 2).toFloat(),
-                    ((rect.bottom + rect.top) / 2).toFloat(),
-                    service = service,
-                    event!!
-                )
-                return
-            } else {
-                if (i == nodeInfoList.size - 1) {/*滚动*/
-                    val rvNodeInfo = rvNodeInfoList[0]
-                    currentStep--
-                    type = EventController.TOUCH_EVENT
-                    index++
-                    scrollDownPoint(rvNodeInfo, service, event!!)
-                    thread {
-                        Thread.sleep(3000)
-                        if (index != 0) {
-                            L.e(/* str = */ "index${index}")
-                            SP.putBoolean(Constant.PERMISSION, true)
-                            EventController.INSTANCE.removeEvent(this, MsgType.SUCCESS)/*开启下一个任务*/
-                        }
                     }
                 }
             }

@@ -56,7 +56,6 @@ class AutoInstallPackEvent(
                                 ((rect.right + rect.left) / 2).toFloat(),
                                 ((rect.bottom + rect.top) / 2).toFloat(),
                                 service = service,
-                                event
                             )
                         }
                     }
@@ -76,7 +75,6 @@ class AutoInstallPackEvent(
                                 ((rect.right + rect.left) / 2).toFloat(),
                                 ((rect.bottom + rect.top) / 2).toFloat(),
                                 service = service,
-                                event
                             )
                         }
                     }
@@ -107,7 +105,6 @@ class AutoInstallPackEvent(
                                                 ((rect.right + rect.left) / 2).toFloat(),
                                                 ((rect.bottom + rect.top) / 2).toFloat(),
                                                 service = service,
-                                                event
                                             )
                                         }
                                     }

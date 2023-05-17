@@ -17,18 +17,30 @@
 
         <ImageView
             android:id="@+id/iv_title"
+            android:src="@mipmap/up_time_bar"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="parent"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_width="125dp"
+            android:layout_height="33dp"
             />
+        <ImageView
+
+            android:id="@+id/iv_content"
+            android:src="@mipmap/icon_bar_content"
+            app:layout_constraintTop_toBottomOf="@id/iv_title"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:scaleType="centerInside"
+            android:layout_width="279.53dp"
+            android:background="@drawable/bg_radius_top"
+            android:layout_height="wrap_content"/>
 
         <androidx.constraintlayout.widget.ConstraintLayout
-            android:layout_width="0dp"
-            android:background="@android:color/white"
-            app:layout_constraintTop_toBottomOf="@id/iv_title"
-            app:layout_constraintBottom_toBottomOf="parent"
+            android:layout_width="279.53dp"
+            android:id="@+id/layout_content"
+            android:background="@drawable/bg_raidius_bottom"
+            app:layout_constraintTop_toBottomOf="@id/iv_content"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             android:layout_height="234.5dp">
@@ -38,7 +50,7 @@
                 android:layout_width="48dp"
                 android:layout_height="48dp"
                 android:layout_marginTop="26.5dp"
-                android:src="@mipmap/logo"
+                android:src="@mipmap/task_logo"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/tv_tip" />
@@ -71,7 +83,7 @@
                 android:id="@+id/tv_title"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="4.5dp"
+                android:layout_marginTop="10dp"
                 android:text="温情提示"
                 android:textColor="@android:color/black"
                 android:textSize="18sp"
@@ -104,6 +116,16 @@
                 app:layout_constraintTop_toBottomOf="@id/tv_msg_1" />
 
         </androidx.constraintlayout.widget.ConstraintLayout>
+
+        <ImageView
+            android:id="@+id/iv_cancel"
+            android:src="@mipmap/icon_cancel"
+            android:layout_marginTop="38.5dp"
+            app:layout_constraintTop_toBottomOf="@id/layout_content"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 

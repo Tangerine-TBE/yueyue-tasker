@@ -32,6 +32,7 @@ class EventController private constructor() {
             AccessibilityEvent.TYPE_VIEW_SCROLLED,
             AccessibilityEvent.TYPE_VIEW_TEXT_CHANGED
         )
+        val ALL_EVENT = null
     }
 
     /**
@@ -44,19 +45,20 @@ class EventController private constructor() {
     /**每次添加事件，记录添加事件的时间*/
     fun addEvent(event: Event): EventController {
         this.currentEvent = event
-        if (eventTimeTask != null) {
-            eventTimeTask!!.stop = true
-        }
-        eventTimeTask =
-            EventTimeTask(event)
-        thread {
-            eventTimeTask!!.run()
-        }
+
         return this
     }
 
     fun execute(eventCompleted: EventAction.OnEventCompleted?) {
         if (currentEvent != null) {
+            if (eventTimeTask != null) {
+                eventTimeTask!!.stop = true
+            }
+            eventTimeTask =
+                EventTimeTask(currentEvent!!)
+            thread {
+                eventTimeTask!!.run()
+            }
             (currentEvent as EventAction).setOnEventCompleted(eventCompleted)
             currentEvent?.execute(null)
         }
@@ -72,7 +74,7 @@ class EventController private constructor() {
             if (event.task.job != null) {
                 if (!event.task.job.isCancelled) {
                     event.runTime++
-                    if (msgType != MsgType.TIME_OUT){
+                    if (msgType != MsgType.TIME_OUT) {
                         (event as EventAction).eventCompleted!!.eventCompleted(msgType.name)
                     }
                     this.currentEvent = null

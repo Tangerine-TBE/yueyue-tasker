@@ -83,8 +83,16 @@ object SuspendEventManager {
                     }
                 })
         }
-
-
+    }
+    suspend fun suspendAutoLieBaoEvent(taskProperty: TaskProperty){
+        suspendCoroutine<String> { continuation ->
+            EventController.INSTANCE.addEvent(AutoLieBaoEvent(taskProperty))
+                .execute(object :EventAction.OnEventCompleted{
+                    override fun eventCompleted(name: String) {
+                        continuation.resume(name)
+                    }
+                })
+        }
     }
 
     suspend fun suspendAutoClearEvent(taskProperty: TaskProperty) {

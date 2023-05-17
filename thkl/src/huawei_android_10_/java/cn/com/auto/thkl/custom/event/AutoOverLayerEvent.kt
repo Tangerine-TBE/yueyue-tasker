@@ -10,7 +10,6 @@ import cn.com.auto.thkl.custom.event.base.EventAction
 import cn.com.auto.thkl.custom.event.base.EventController
 import cn.com.auto.thkl.custom.event.base.MsgType
 import cn.com.auto.thkl.custom.task.TaskProperty
-import cn.com.auto.thkl.custom.task.TaskType
 import com.stardust.app.permission.DrawOverlaysPermission
 
 @RequiresApi(Build.VERSION_CODES.P)
@@ -35,7 +34,7 @@ class AutoOverLayerEvent(override val task: TaskProperty) : EventAction("自动�
                             target.getBoundsInScreen(rect)
                             type = EventController.TOUCH_EVENT
                             currentStep++
-                            clickPoint(service,event)
+                            clickPoint(service)
                         }
                     }
                 }

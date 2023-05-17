@@ -5,9 +5,10 @@ import android.content.ComponentName
 import android.content.Intent
 import android.os.Build
 import android.view.accessibility.AccessibilityEvent
+import android.view.accessibility.AccessibilityNodeInfo
+import android.view.accessibility.AccessibilityNodeInfo.ACTION_CLICK
 import androidx.annotation.RequiresApi
 import cn.com.auto.thkl.App
-import cn.com.auto.thkl.autojs.AutoJs
 import cn.com.auto.thkl.custom.event.base.Event
 import cn.com.auto.thkl.custom.event.base.EventAction
 import cn.com.auto.thkl.custom.event.base.EventController
@@ -20,12 +21,13 @@ class AutoSysSetEvent(override val task: TaskProperty) :
     @RequiresApi(Build.VERSION_CODES.N)
     override fun start(service: AccessibilityService, event: AccessibilityEvent?) {
         when (currentStep) {
-            0 ->{
-                runEvent{
+            0 -> {
+                runEvent {
                     currentStep++
                     App.service.performGlobalAction(AccessibilityService.GLOBAL_ACTION_HOME)
                 }
             }
+
             1 -> {
                 runEvent {
                     val componentName =
@@ -61,7 +63,6 @@ class AutoSysSetEvent(override val task: TaskProperty) :
                                 ((rect.right + rect.left) / 2).toFloat(),
                                 ((rect.bottom + rect.top) / 2).toFloat(),
                                 service = service,
-                                event
                             )
                         }
                     }
@@ -89,8 +90,7 @@ class AutoSysSetEvent(override val task: TaskProperty) :
                             clickPoint(
                                 ((rect.right + rect.left) / 2).toFloat(),
                                 ((rect.bottom + rect.top) / 2).toFloat(),
-                                service = service!!,
-                                event
+                                service = service,
                             )
                         }
                     }
@@ -109,7 +109,7 @@ class AutoSysSetEvent(override val task: TaskProperty) :
                         if (target != null) {
                             target.getBoundsInScreen(rect)
                             currentStep++
-                            clickPoint(service, event)
+                            clickPoint(service)
                         }
                     }
                 }
@@ -126,7 +126,7 @@ class AutoSysSetEvent(override val task: TaskProperty) :
                         val target = targetList[0]
                         if (target != null) {
                             target.getBoundsInScreen(rect)
-                            clickPoint(service, event)
+                            clickPoint(service)
                             runEvent {
                                 EventController.INSTANCE.removeEvent(this, MsgType.SUCCESS)
                             }
@@ -137,6 +137,7 @@ class AutoSysSetEvent(override val task: TaskProperty) :
         }
     }
 
+    var index = 0
     override var currentStep: Int = 0
     override var runTime: Int = 120
 }

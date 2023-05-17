@@ -12,12 +12,13 @@ import cn.com.auto.thkl.custom.event.base.EventController
 import cn.com.auto.thkl.custom.event.base.MsgType
 import cn.com.auto.thkl.custom.task.TaskProperty
 import cn.com.auto.thkl.utils.L
+import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlin.concurrent.thread
 
 @RequiresApi(Build.VERSION_CODES.P)
 class AutoRequestAppsPermissionEvent(
     override val task: TaskProperty
-) : EventAction("自动权限申请-${task.packName}", EventController.SYSTEM_EVENT){
+) : EventAction("自动权限申请", EventController.SYSTEM_EVENT){
     override var currentStep = 1
 
     private var index = 0
@@ -34,7 +35,7 @@ class AutoRequestAppsPermissionEvent(
                     intent.action = android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS
                     intent.data = Uri.parse("package:${task.packName}")
                     intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
-                    App.service!!.startActivity(intent)
+                    App.service.startActivity(intent)
                     currentStep++
                 }
 
@@ -51,7 +52,6 @@ class AutoRequestAppsPermissionEvent(
                                 ((rect.right + rect.left) / 2).toFloat(),
                                 ((rect.bottom + rect.top) / 2).toFloat(),
                                 service = service,
-                                event
                             )
                         }
                     }
@@ -79,7 +79,6 @@ class AutoRequestAppsPermissionEvent(
                                    ((rect.right + rect.left) / 2).toFloat(),
                                    ((rect.bottom + rect.top) / 2).toFloat(),
                                    service = service,
-                                   event
                                )
                                 return@runEvent
                            } else {
@@ -103,8 +102,7 @@ class AutoRequestAppsPermissionEvent(
                    }
                 } else if (event.className == "androidx.recyclerview.widget.RecyclerView" && event.packageName == "com.android.permissioncontroller") {/*滑动发生变化*/
                     runEvent{
-
-                        val windowInfo = service!!.rootInActiveWindow
+                        val windowInfo = service.rootInActiveWindow
                         val nodeInfoList =
                             windowInfo.findAccessibilityNodeInfosByViewId("android:id/title")
                         currentStep++
@@ -121,7 +119,6 @@ class AutoRequestAppsPermissionEvent(
                                     ((rect.right + rect.left) / 2).toFloat(),
                                     ((rect.bottom + rect.top) / 2).toFloat(),
                                     service = service,
-                                    event
                                 )
                                 if (index > 0) {
                                     index--
@@ -149,7 +146,6 @@ class AutoRequestAppsPermissionEvent(
                                     ((rect.right + rect.left) / 2).toFloat(),
                                     ((rect.bottom + rect.top) / 2).toFloat(),
                                     service = service,
-                                    event
                                 )
                             }
                         }else if (onlyRadioButtons.size >0){
@@ -159,7 +155,6 @@ class AutoRequestAppsPermissionEvent(
                                     ((rect.right + rect.left) / 2).toFloat(),
                                     ((rect.bottom + rect.top) / 2).toFloat(),
                                     service = service,
-                                    event
                                 )
                             }
                         }

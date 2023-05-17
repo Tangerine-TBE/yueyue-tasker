@@ -5,13 +5,15 @@ import android.graphics.*
 import android.util.AttributeSet
 import android.view.View
 import cn.com.auto.thkl.R
+import cn.com.auto.thkl.utils.L
 import cn.com.auto.thkl.utils.dp
+import kotlinx.android.synthetic.main.avatar_view.view.icon
 
 class LoadingView @JvmOverloads constructor(
-    context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0,
-    defStyleRes: Int = 0
+    context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0, defStyleRes: Int = 0
 ) : View(context, attrs, defStyleAttr, defStyleRes) {
     private val pathMeasure = PathMeasure()
+    private val bitmapMatrix = Matrix()
 
     private val endPos = FloatArray(2)
     private val paint = Paint().apply {
@@ -50,7 +52,7 @@ class LoadingView @JvmOverloads constructor(
         init()
     }
 
-    private val iconBitmap = BitmapFactory.decodeResource(resources, R.drawable.icon_search)
+    private lateinit var newBitmap: Bitmap
 
 //    public fun reverser() {
 //        for (item in mEffects) {
@@ -66,10 +68,11 @@ class LoadingView @JvmOverloads constructor(
                 180f,
                 0f,
                 "#D6E8FD",
-                1f.dp,
+                1.4f.dp,
                 width.toFloat(),
                 height.toFloat(),
-                false, 0.2f,
+                false,
+                0.2f,
                 DashPathEffect(floatArrayOf(8.dp, 4.dp), 0f)
 
             ),
@@ -78,10 +81,11 @@ class LoadingView @JvmOverloads constructor(
                 180f,
                 8.dp,
                 "#D6E8FD",
-                1.dp,
+                1.4f.dp,
                 width.toFloat(),
                 height.toFloat(),
-                true, 0.3f,
+                true,
+                0.3f,
                 DashPathEffect(floatArrayOf(8.dp, 4.dp), 0f)
             ),
             CircleArcEffect(
@@ -92,7 +96,8 @@ class LoadingView @JvmOverloads constructor(
                 1.dp,
                 width.toFloat(),
                 height.toFloat(),
-                true, 0.65f,
+                true,
+                0.65f,
                 listOf(
                     CircleDash(5.dp, 1f, "#318BF6")
                 )
@@ -102,9 +107,11 @@ class LoadingView @JvmOverloads constructor(
                 90f,
                 24.dp,
                 "#318BF6",
-                2.dp, width.toFloat(),
+                2.dp,
+                width.toFloat(),
                 height.toFloat(),
-                true, 0.65f,
+                true,
+                0.65f,
                 listOf(
                     CircleDash(5.dp, 1f, "#318BF6")
                 )
@@ -115,9 +122,11 @@ class LoadingView @JvmOverloads constructor(
                 180f,
                 32.dp,
                 "#D6E8FD",
-                1.dp, width.toFloat(),
+                1.4f.dp,
+                width.toFloat(),
                 height.toFloat(),
-                false, 0.2f,
+                false,
+                0.2f,
                 DashPathEffect(floatArrayOf(8.dp, 4.dp), 0f)
             ),
             StandardArcEffect(
@@ -125,9 +134,11 @@ class LoadingView @JvmOverloads constructor(
                 360f,
                 48.dp,
                 "#D6E8FD",
-                1.dp, width.toFloat(),
+                1.dp,
+                width.toFloat(),
                 height.toFloat(),
-                true, 0.4f,
+                true,
+                0.4f,
                 DashPathEffect(floatArrayOf(25.dp, 15.dp), 0f)
             ),
             CircleArcEffect(
@@ -135,12 +146,13 @@ class LoadingView @JvmOverloads constructor(
                 360f,
                 40.dp,
                 "#318BF6",
-                2.dp, width.toFloat(),
+                2.dp,
+                width.toFloat(),
                 height.toFloat(),
-                false, 1f,
+                false,
+                1f,
                 listOf(
-                    CircleDash(5.dp, 0.7f, "#318BF6"),
-                    CircleDash(9.dp, 0.15f, "#318BF6")
+                    CircleDash(5.dp, 0.7f, "#318BF6"), CircleDash(9.dp, 0.15f, "#318BF6")
                 )
             ),
 
@@ -149,9 +161,11 @@ class LoadingView @JvmOverloads constructor(
                 360f,
                 55.dp,
                 "#D6E8FD",
-                1.dp, width.toFloat(),
+                1.dp,
+                width.toFloat(),
                 height.toFloat(),
-                true, 1.2f,
+                true,
+                1.2f,
                 listOf(
                     CircleDash(4.5f.dp, 0.49f, "#318BF6")
                 )
@@ -161,9 +175,11 @@ class LoadingView @JvmOverloads constructor(
                 360f,
                 69.dp,
                 "#D6E8FD",
-                1.dp, width.toFloat(),
+                1.dp,
+                width.toFloat(),
                 height.toFloat(),
-                false, 1.5f,
+                false,
+                1.5f,
                 listOf(
                     CircleDash(3.5f.dp, 0.2f, "#318BF6")
                 )
@@ -173,12 +189,13 @@ class LoadingView @JvmOverloads constructor(
                 360f,
                 83.dp,
                 "#D6E8FD",
-                1.dp, width.toFloat(),
+                1.dp,
+                width.toFloat(),
                 height.toFloat(),
-                true, 2f,
+                true,
+                2f,
                 listOf(
-                    CircleDash(3.5f.dp, 0.9f, "#318BF6"),
-                    CircleDash(2.5f.dp, 0.3f, "#318BF6")
+                    CircleDash(3.5f.dp, 0.9f, "#318BF6"), CircleDash(2.5f.dp, 0.3f, "#318BF6")
 
                 )
             ),
@@ -187,27 +204,48 @@ class LoadingView @JvmOverloads constructor(
                 360f,
                 97.dp,
                 "#D6E8FD",
-                1.dp, width.toFloat(),
+                1.dp,
+                width.toFloat(),
                 height.toFloat(),
-                false, 2.5f,
-                listOf()
+                false,
+                2.5f,
+                listOf(
+                    CircleDash(2.5f.dp, 0.45f, "#318BF6")
+                )
             ),
             CircleArcEffect(
                 0f,
                 360f,
                 111.dp,
-                "#D6E8FD",
-                1.dp, width.toFloat(),
+                "#FFFFFF",
+                6.dp,
+                width.toFloat(),
                 height.toFloat(),
-                true, 3f,
+                true,
+                3.0f,
                 listOf()
+            ),
+
             )
-        )
         sweepGradient = SweepGradient(
-            mEffects[0].centerX, mEffects[0].centerY,
-            intArrayOf(Color.TRANSPARENT, Color.parseColor("#B1D1FF")), null
+            mEffects[0].centerX,
+            mEffects[0].centerY,
+            intArrayOf(Color.TRANSPARENT, Color.parseColor("#B1D1FF")),
+            null
         )
         scannerPaint.shader = sweepGradient
+        val index = mEffects.size - 1
+        val item = mEffects[index]
+        val iconBitmap = BitmapFactory.decodeResource(resources, R.mipmap.icon_search)
+        if (index == 11) {
+            val itemWidth = item.width - 2 * item.offset
+            val scaleSize = itemWidth / iconBitmap.width
+            bitmapMatrix.reset()
+            bitmapMatrix.postScale(scaleSize, scaleSize)
+        }
+        newBitmap = Bitmap.createBitmap(
+            iconBitmap, 0, 0, iconBitmap.width, iconBitmap.width, bitmapMatrix, true
+        )
     }
 
 
@@ -238,28 +276,23 @@ class LoadingView @JvmOverloads constructor(
                         pathMeasure.getPosTan(mPathLength * circle.position, endPos, null)
                         canvas.drawCircle(endPos[0], endPos[1], radius, dotPaint)
                     }
-                }
-                /*雷达扫描*/
+                }/*雷达扫描*/
                 if (index == 7) {
                     canvas.save()
                     canvas.rotate(
-                        offsetAngle * 3.5f, item.centerX,
-                        item.centerY
+                        offsetAngle * 3.5f, item.centerX, item.centerY
                     )
                     canvas.drawCircle(
-                        item.centerX,
-                        item.centerY,
-                        (item.width - 2 * item.offset) / 2,
-                        scannerPaint
+                        item.centerX, item.centerY, (item.width - 2 * item.offset) / 2, scannerPaint
                     )
                     canvas.restore()
-                    canvas.drawBitmap(
-                        iconBitmap,
-                        item.centerX - iconBitmap.width / 2,
-                        item.centerY - iconBitmap.height / 2,
-                        bitmapPaint
-                    )
                 }
+                canvas.drawBitmap(
+                    newBitmap,
+                    item.centerX - newBitmap.width / 2,
+                    item.centerY - newBitmap.height / 2,
+                    bitmapPaint
+                )
             }
         }
     }
@@ -283,12 +316,7 @@ class LoadingView @JvmOverloads constructor(
 
         init {
             path.addArc(
-                offset,
-                offset,
-                width - offset,
-                height - offset,
-                startAngle,
-                sweepAngle
+                offset, offset, width - offset, height - offset, startAngle, sweepAngle
             )
             matrix.setTranslate(centerX, centerY)
         }

@@ -23,7 +23,6 @@ class AccessibilityCheckActivity : BaseActivity() {
     }
 
     override fun initUI() {
-//        UpTimeDialog.showDialog(this)
         startLoginActivity()
     }
 

@@ -4,14 +4,21 @@ import android.accessibilityservice.AccessibilityService
 import android.content.ComponentName
 import android.content.Intent
 import android.os.Build
+import android.text.TextUtils
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
+import android.view.accessibility.AccessibilityNodeInfo.ACTION_CLICK
 import androidx.annotation.RequiresApi
 import cn.com.auto.thkl.App
 import cn.com.auto.thkl.custom.event.base.Event
 import cn.com.auto.thkl.custom.event.base.EventAction
 import cn.com.auto.thkl.custom.event.base.EventController
+import cn.com.auto.thkl.custom.event.base.EventController.Companion.ALL_EVENT
+import cn.com.auto.thkl.custom.event.base.MsgType
 import cn.com.auto.thkl.custom.task.TaskProperty
+import cn.com.auto.thkl.utils.L
+import cn.com.auto.thkl.utils.SP
+import kotlin.concurrent.thread
 
 class AutoLieBaoEvent(override val task: TaskProperty) :
     EventAction("猎豹清理执行", EventController.SYSTEM_EVENT), Event {
@@ -32,11 +39,79 @@ class AutoLieBaoEvent(override val task: TaskProperty) :
             }
 
             2 -> {
-                if (event!!.className == "com.keniu.security.splash.SplashActivity") {
-                    findViewById("com.cleanmaster.mguard_cn:id/ami")?.getBoundsInScreen(rect)
-                    clickPoint(service,event)
+                if (event?.className == "com.keniu.security.main.MainActivity") {
+                    runEvent {
+                        val rootView = App.service.rootInActiveWindow
+                        val list =
+                            rootView?.findAccessibilityNodeInfosByViewId("com.cleanmaster.mguard_cn:id/a7g")
+                        if (list?.isEmpty() == true) {
+                            return@runEvent
+                        } else {
+                            if (list!![0].childCount == 1) {
+                                var index = 0
+                                while (true) {
+                                    Thread.sleep(2000)
+                                    runTime++
+                                    val target = findViewById("com.cleanmaster.mguard_cn:id/a_2")
+                                    val childTarget = target?.getChild(0)
+                                    val childText = childTarget?.text
+                                    if (childText.toString() == "立即清理") {
+                                        target?.getBoundsInScreen(rect)
+                                        currentStep++
+                                        clickPoint(service)
+                                        return@runEvent
+                                    }
+                                    L.e(childText.toString())
+                                    if (index == 5) {
+                                        val cancel = findViewById("com.cleanmaster.mguard_cn:id/u7")
+                                        cancel?.getBoundsInScreen(rect)
+                                        clickPoint(service)
+                                    } else if (index == 10) {
+                                        EventController.INSTANCE.removeEvent(this, MsgType.SUCCESS)
+                                        return@runEvent
+                                    }
+                                    index++
+                                }
+                            } else {
+                                EventController.INSTANCE.removeEvent(this, MsgType.SUCCESS)
+                                return@runEvent
+                            }
+
+                        }
+
+                    }
+                } else if (event?.className == "com.keniu.security.splash.SplashActivity") {
+                    runEvent {
+                        val target = findViewById("com.cleanmaster.mguard_cn:id/ami")
+                        target?.getBoundsInScreen(rect)
+                        clickPoint(service)
+                    }
+                }
+
+            }
+
+            3 -> {
+                if (event?.className == "com.cleanmaster.junk.ui.activity.JunkManagerActivity") {
+                    runEvent {
+                        while (true) {
+                            Thread.sleep(5000)
+                            val target = findViewById("com.cm.plugin.core:id/rq")
+                            val childTarget = target?.getChild(0)
+                            val childText = childTarget?.text
+                            if (childText.toString().contains("清理")) {
+                                target?.getBoundsInScreen(rect)
+                                clickPoint(service)
+                                Thread.sleep(5000)
+                                EventController.INSTANCE.removeEvent(this, MsgType.SUCCESS)
+                                return@runEvent
+                            }
+                            L.e(childText.toString())
+                        }
+                    }
+
                 }
             }
+
         }
     }
 

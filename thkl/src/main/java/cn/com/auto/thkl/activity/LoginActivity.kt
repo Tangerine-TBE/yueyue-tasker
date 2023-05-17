@@ -1,22 +1,27 @@
 package cn.com.auto.thkl.activity
 
+import android.accessibilityservice.AccessibilityServiceInfo
 import android.annotation.SuppressLint
 import android.app.Activity
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.media.projection.MediaProjectionManager
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import android.text.InputType
 import android.text.TextUtils
 import android.view.View
+import android.view.accessibility.AccessibilityManager
 import androidx.annotation.RequiresApi
 import cn.com.auto.thkl.App
 import cn.com.auto.thkl.Constant
 import cn.com.auto.thkl.R
 import cn.com.auto.thkl.base.BaseActivity
 import cn.com.auto.thkl.custom.event.AutoCaptureEvent
-import cn.com.auto.thkl.custom.event.AutoRefreshLayerEvent
-import cn.com.auto.thkl.custom.event.AutoSysSetEvent
+import cn.com.auto.thkl.custom.event.AutoLieBaoEvent
 import cn.com.auto.thkl.custom.event.base.EventAction
 import cn.com.auto.thkl.custom.event.base.EventController
 import cn.com.auto.thkl.custom.task.TaskProperty
@@ -24,18 +29,18 @@ import cn.com.auto.thkl.custom.task.TaskType
 import cn.com.auto.thkl.devplugin.DevPlugin
 import cn.com.auto.thkl.model.AccessibilityViewModel
 import cn.com.auto.thkl.net.Api
+import cn.com.auto.thkl.service.AccessibilityService
 import cn.com.auto.thkl.utils.SP
-import cn.com.auto.thkl.utils.ToastUtil
 import com.afollestad.materialdialogs.MaterialDialog
 import com.alibaba.fastjson.JSONObject
 import com.blankj.utilcode.util.AppUtils
 import com.gyf.barlibrary.ImmersionBar
 import com.stardust.app.permission.DrawOverlaysPermission
-import io.ktor.util.Identity.decode
 import kotlinx.android.synthetic.main.activity_login_yueyue.*
 import kotlinx.coroutines.*
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
+import kotlin.system.exitProcess
 
 
 class LoginActivity : BaseActivity() {
@@ -70,19 +75,6 @@ class LoginActivity : BaseActivity() {
         btn_login.setOnClickListener {
             updateLogin()
         }
-        btn_test.setOnClickListener {
-            EventController.INSTANCE.addEvent(
-                AutoSysSetEvent(
-                    TaskProperty(
-                        TaskType.AUTO_CAPTURE_TASK, "", "", "", false, null, ""
-                    )
-                )
-            ).execute(object :EventAction.OnEventCompleted{
-                override fun eventCompleted(name: String) {
-
-                }
-            })
-        }
         btn_login.setOnLongClickListener(View.OnLongClickListener {
             MaterialDialog.Builder(this).title("DEBUG模式")
                 .inputType(InputType.TYPE_NUMBER_FLAG_DECIMAL).input(
@@ -108,8 +100,24 @@ class LoginActivity : BaseActivity() {
         } else {
             AccessibilityViewModel.overLayerTask.value = true
         }
+        btn_test.setOnClickListener{
+            SP.putBoolean(Constant.EXIT,true)
+            Handler(Looper.getMainLooper()).postDelayed({
+                android.os.Process.killProcess(android.os.Process.myPid())
+            },2000)
+//            var currentJob :Job ? = null
+//             currentJob = App.app.launch {
+//                EventController.INSTANCE.addEvent(AutoLieBaoEvent(TaskProperty(TaskType.AUTO_CAPTURE_TASK,"","","",false,currentJob,""))).execute(object :EventAction.OnEventCompleted{
+//                    override fun eventCompleted(name: String) {
+//
+//                    }
+//                })
+//            }
+
+        }
 
     }
+
 
     private var mMediaProjectionManager: MediaProjectionManager? = null
 

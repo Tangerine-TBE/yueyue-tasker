@@ -10,10 +10,11 @@ import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
 import androidx.annotation.RequiresApi
 import cn.com.auto.thkl.App
+import cn.com.auto.thkl.App.Companion.OFFSET_VALUE
+import cn.com.auto.thkl.App.Companion.service
 import cn.com.auto.thkl.utils.L
 import com.blankj.utilcode.util.ScreenUtils
 
-private const val OFFSET_VALUE = 50f /*偏移量*/
 
 abstract class EventAction(eventName: String, eventType: Set<Int>) : Event {
     override val name: String = eventName //初始化必须要的
@@ -34,16 +35,16 @@ abstract class EventAction(eventName: String, eventType: Set<Int>) : Event {
     fun runEvent(runnable: Runnable) {
         runTime++
         App.handler.removeCallbacksAndMessages(null)
-        App.handler.postDelayed(runnable, 1000)
+        App.handler.postDelayed(runnable, 1500)
     }
     fun runEvent(runnable: Runnable,delay:Float){
         runTime++
         App.handler.removeCallbacksAndMessages(null)
-        App.handler.postDelayed(runnable, (delay * 1000).toLong())
+        App.handler.postDelayed(runnable, (delay * 1500).toLong())
     }
 
     override fun execute(event: AccessibilityEvent?) {
-            start(App.service, event)
+            start(service, event)
     }
 
 
@@ -54,14 +55,14 @@ abstract class EventAction(eventName: String, eventType: Set<Int>) : Event {
         runTime++
         App.handler.postDelayed({
             service.performGlobalAction(AccessibilityService.GLOBAL_ACTION_BACK)
-        },1000)
+        },1500)
     }
 
 
     var x = (ScreenUtils.getAppScreenWidth() / 2).toFloat()//起点x
     var y = 0f//起点y
-    var perMoveY = 0f //每次滑动的距离
-
+    var perMoveY = 0f //上下每次滑动的距离
+    var perMoveX = 0f //左右每次滑动的距离
     @SuppressLint("NewApi")
     fun scrollDownPoint(
         accessibilityNodeInfo: AccessibilityNodeInfo?,
@@ -81,9 +82,9 @@ abstract class EventAction(eventName: String, eventType: Set<Int>) : Event {
             return
         }
         accessibilityNodeInfo.parent.getBoundsInScreen(rect)
-        y = rect.bottom.toFloat() - OFFSET_VALUE
+        y = rect.bottom.toFloat() - App.OFFSET_VALUE
         if (perMoveY == 0f) {/*设置滑动距离，每一次滑动根据父布局长度的一半来定*/
-            perMoveY = rect.top + OFFSET_VALUE
+            perMoveY = rect.top + App.OFFSET_VALUE
         }
         path.moveTo(x, y)
         path.lineTo(x, perMoveY)
@@ -109,6 +110,46 @@ abstract class EventAction(eventName: String, eventType: Set<Int>) : Event {
         )
 
     }
+
+    @RequiresApi(Build.VERSION_CODES.N)
+    fun scrollRightPoint(accessibilityNodeInfo: AccessibilityNodeInfo?){
+        runTime++
+        if (isWorking){
+            return
+        }
+        val builder = GestureDescription.Builder()
+        val path = Path()
+        if (accessibilityNodeInfo == null){
+            return
+        }
+        accessibilityNodeInfo.getBoundsInScreen(rect)
+        if (perMoveX == 0f) {/*设置滑动距离，每一次滑动根据父布局长度的一半来定*/
+            perMoveX = rect.left + OFFSET_VALUE
+        }
+        path.moveTo(x, y)
+        path.lineTo(perMoveX, y)
+        builder.addStroke(GestureDescription.StrokeDescription(path, 500, 500))
+        val gesture = builder.build()
+        isWorking = true
+        service.dispatchGesture(
+            gesture, @RequiresApi(Build.VERSION_CODES.N)
+            object : AccessibilityService.GestureResultCallback() {
+                override fun onCompleted(gestureDescription: GestureDescription?) {
+                    L.e("滑动完成")
+                    isWorking = false
+                    super.onCompleted(gestureDescription)
+                    runTime++
+                }
+
+                override fun onCancelled(gestureDescription: GestureDescription?) {
+                    super.onCancelled(gestureDescription)
+                    L.e("滑动失败")
+                    isWorking = false
+                }
+            }, null
+        )
+    }
+
     @RequiresApi(Build.VERSION_CODES.N)
     fun scrollUpPoint(accessibilityNodeInfo: AccessibilityNodeInfo,
                       service: AccessibilityService,
@@ -150,7 +191,7 @@ abstract class EventAction(eventName: String, eventType: Set<Int>) : Event {
 
     }
     @SuppressLint("NewApi")
-    fun clickPoint(x: Float, y: Float, service: AccessibilityService, event: AccessibilityEvent) {
+    fun clickPoint(x: Float, y: Float, service: AccessibilityService) {
         runTime++
         if (isWorking) {
             return
@@ -183,7 +224,7 @@ abstract class EventAction(eventName: String, eventType: Set<Int>) : Event {
     }
 
     @RequiresApi(Build.VERSION_CODES.N)
-    fun clickPoint( service: AccessibilityService, event: AccessibilityEvent){
+    fun clickPoint( service: AccessibilityService){
         runTime++
         if (isWorking) {
             return

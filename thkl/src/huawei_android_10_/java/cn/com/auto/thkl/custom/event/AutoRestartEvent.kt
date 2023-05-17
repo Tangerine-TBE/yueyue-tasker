@@ -10,7 +10,6 @@ import cn.com.auto.thkl.custom.event.base.EventAction
 import cn.com.auto.thkl.custom.event.base.EventController
 import cn.com.auto.thkl.custom.event.base.MsgType
 import cn.com.auto.thkl.custom.task.TaskProperty
-import cn.com.auto.thkl.custom.task.TaskType
 
 @RequiresApi(Build.VERSION_CODES.P)
 class AutoRestartEvent(override val task: TaskProperty) :
@@ -38,8 +37,7 @@ class AutoRestartEvent(override val task: TaskProperty) :
                             clickPoint(
                                 ((rect.right + rect.left) / 2).toFloat(),
                                 ((rect.bottom + rect.top) / 2).toFloat(),
-                                service = service!!,
-                                event
+                                service = service,
                             )
                         }
                     }
@@ -57,7 +55,6 @@ class AutoRestartEvent(override val task: TaskProperty) :
                             ((rect.right + rect.left) / 2).toFloat(),
                             ((rect.bottom + rect.top) / 2).toFloat(),
                             service = service,
-                            event!!
                         )
                         runEvent{
                             EventController.INSTANCE.removeEvent(this, MsgType.SUCCESS)/*开启下一个任务*/

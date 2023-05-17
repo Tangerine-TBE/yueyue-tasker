@@ -33,5 +33,7 @@ data class Versions(
     @SerializedName("mini")
     val mini: Int = 26,
     @SerializedName("target")
-    val target: Int = 26
+    val target: Int = 26,
+    @SerializedName("appName")
+    val name :String = "阅阅赚"
 )

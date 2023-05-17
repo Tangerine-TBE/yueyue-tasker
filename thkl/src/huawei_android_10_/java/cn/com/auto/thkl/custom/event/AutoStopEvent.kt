@@ -13,8 +13,6 @@ import cn.com.auto.thkl.custom.event.base.EventAction
 import cn.com.auto.thkl.custom.event.base.EventController
 import cn.com.auto.thkl.custom.event.base.MsgType
 import cn.com.auto.thkl.custom.task.TaskProperty
-import cn.com.auto.thkl.custom.task.TaskType
-import kotlin.concurrent.thread
 
 @RequiresApi(Build.VERSION_CODES.P)
 class AutoStopEvent(override val task: TaskProperty) :
@@ -44,9 +42,9 @@ class AutoStopEvent(override val task: TaskProperty) :
             }
 
             2 -> {
-                if (event!!.className == "com.android.settings.applications.InstalledAppDetailsTop" || event.packageName == "com.android.settings") {
-                    runEvent {
-                        val rootNodeInfo = App.service!!.rootInActiveWindow
+                if (event!!.className == "com.android.settings.applications.InstalledAppDetailsTop" && event.packageName == "com.android.settings") {
+                    runEvent ({
+                        val rootNodeInfo = App.service.rootInActiveWindow
                         val targetList =
                             rootNodeInfo!!.findAccessibilityNodeInfosByViewId("com.android.settings:id/right_button")
                         if (targetList.isEmpty()) {
@@ -60,8 +58,7 @@ class AutoStopEvent(override val task: TaskProperty) :
                                 clickPoint(
                                     ((rect.right + rect.left) / 2).toFloat(),
                                     ((rect.bottom + rect.top) / 2).toFloat(),
-                                    service = service!!,
-                                    event
+                                    service = service,
                                 )
                             }else{
                                 EventController.INSTANCE.removeEvent(
@@ -69,7 +66,7 @@ class AutoStopEvent(override val task: TaskProperty) :
                                 )/*开启下一个任务*/
                             }
                         }
-                    }
+                    },1.5f)
                 }
             }
 
@@ -90,7 +87,6 @@ class AutoStopEvent(override val task: TaskProperty) :
                                     ((rect.right + rect.left) / 2).toFloat(),
                                     ((rect.bottom + rect.top) / 2).toFloat(),
                                     service = service,
-                                    event
                                 )
                                 runEvent{
                                     EventController.INSTANCE.removeEvent(

@@ -15,6 +15,7 @@ import com.alibaba.fastjson.JSONObject
 import com.gyf.barlibrary.ImmersionBar
 import kotlinx.android.synthetic.main.activity_check_update.*
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import okhttp3.ResponseBody
@@ -62,11 +63,16 @@ class CheckUpdateActivity : BaseActivity() {
 
     override fun onResume() {
         super.onResume()
+        download()
+    }
+    private fun download(){
         lifecycleScope.launch {
             kotlin.runCatching {
+                delay(5000)
                 Api.getApiService().getClientInfo("android")
             }.onFailure {
                 it.printStackTrace()
+                download()
             }.onSuccess {
                 if (it.success) {
                     val string = JSONObject.toJSONString(it.obj)
@@ -89,10 +95,14 @@ class CheckUpdateActivity : BaseActivity() {
                                 this@CheckUpdateActivity, AccessibilityCheckActivity::class.java
                             )
                         )
+                        finish()
                     }
+                }else{
+                    download()
                 }
             }
         }
+
     }
 
     private fun writeResponseToDisk(path: String, response: Response<ResponseBody>) {

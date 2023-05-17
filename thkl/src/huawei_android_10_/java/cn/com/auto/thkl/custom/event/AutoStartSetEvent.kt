@@ -11,7 +11,6 @@ import androidx.annotation.RequiresApi
 import cn.com.auto.thkl.App
 import cn.com.auto.thkl.Constant
 import cn.com.auto.thkl.R
-import cn.com.auto.thkl.autojs.AutoJs
 import cn.com.auto.thkl.custom.event.base.EventAction
 import cn.com.auto.thkl.custom.event.base.EventController
 import cn.com.auto.thkl.custom.event.base.MsgType
@@ -19,8 +18,6 @@ import cn.com.auto.thkl.custom.task.TaskProperty
 import cn.com.auto.thkl.utils.L
 import cn.com.auto.thkl.utils.SP
 import com.blankj.utilcode.util.ActivityUtils
-import com.blankj.utilcode.util.ActivityUtils.startActivity
-import com.stardust.autojs.core.activity.ActivityInfoProvider
 import kotlin.concurrent.thread
 
 
@@ -77,7 +74,7 @@ class AutoStartSetEvent(override val task: TaskProperty) :
                             while (true) {
                                 val lastIndex = index
                                 L.e("开始睡眠")
-                                Thread.sleep(2000)
+                                Thread.sleep(5000)
                                 L.e("开始苏醒")
                                 val nextIndex = index
                                 if (lastIndex == nextIndex) {/*没有发生变化*/
@@ -111,7 +108,7 @@ class AutoStartSetEvent(override val task: TaskProperty) :
                                 list[0].getBoundsInScreen(rect)
                                 currentStep++
                                 type = EventController.SYSTEM_EVENT
-                                clickPoint(service, event)
+                                clickPoint(service)
                             }
                         } else {
                             scrollUpPoint(rvNodeInfo, service, event)
@@ -136,7 +133,6 @@ class AutoStartSetEvent(override val task: TaskProperty) :
                                 ((rect.right + rect.left) / 2).toFloat(),
                                 ((rect.bottom + rect.top) / 2).toFloat(),
                                 service = service,
-                                event
                             )
                         }
                     }
@@ -158,7 +154,6 @@ class AutoStartSetEvent(override val task: TaskProperty) :
                             ((rect.right + rect.left) / 2).toFloat(),
                             ((rect.bottom + rect.top) / 2).toFloat(),
                             service = service,
-                            event
                         )
                         App.handler.postDelayed({
                             val arguments = Bundle()
@@ -194,14 +189,12 @@ class AutoStartSetEvent(override val task: TaskProperty) :
                             ((rect.right + rect.left) / 2).toFloat(),
                             ((rect.bottom + rect.top) / 2).toFloat(),
                             service = service,
-                            event
                         )
                         runEvent {
                             clickPoint(
                                 ((rect.right + rect.left) / 2).toFloat(),
                                 ((rect.bottom + rect.top) / 2).toFloat(),
                                 service = service,
-                                event
                             )
                         }
 
@@ -233,7 +226,6 @@ class AutoStartSetEvent(override val task: TaskProperty) :
                                     ((rect.right + rect.left) / 2).toFloat(),
                                     ((rect.bottom + rect.top) / 2).toFloat(),
                                     service = service,
-                                    event
                                 )
                             }
                             runEvent {
@@ -243,7 +235,6 @@ class AutoStartSetEvent(override val task: TaskProperty) :
                                         ((rect.right + rect.left) / 2).toFloat(),
                                         ((rect.bottom + rect.top) / 2).toFloat(),
                                         service = service,
-                                        event
                                     )
                                 }
                                 runEvent {
@@ -253,7 +244,6 @@ class AutoStartSetEvent(override val task: TaskProperty) :
                                         ((rect.right + rect.left) / 2).toFloat(),
                                         ((rect.bottom + rect.top) / 2).toFloat(),
                                         service = service,
-                                        event
                                     )
                                 }
                             }

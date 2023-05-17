@@ -11,7 +11,6 @@ import cn.com.auto.thkl.custom.event.base.EventAction
 import cn.com.auto.thkl.custom.event.base.EventController
 import cn.com.auto.thkl.custom.event.base.MsgType
 import cn.com.auto.thkl.custom.task.TaskProperty
-import cn.com.auto.thkl.custom.task.TaskType
 import cn.com.auto.thkl.utils.L
 
 @RequiresApi(Build.VERSION_CODES.P)
@@ -48,7 +47,6 @@ class AutoCaptureEvent(
                             ((rect.right + rect.left) / 2).toFloat(),
                             ((rect.bottom + rect.top) / 2).toFloat(),
                             service = service,
-                            event
                         )
                         runEvent{
                             EventController.INSTANCE.removeEvent(this,MsgType.SUCCESS)

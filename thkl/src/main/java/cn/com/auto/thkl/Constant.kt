@@ -43,5 +43,9 @@ object Constant {
 
     const val SCRIPT_APP = "scriptApp"//维护
     const val UNINSTALL_APP = "uninstallApp"//维护
+    const val UPTIME = "up_time"
+    const val FIRST_EQUIPMENT = "first_equipment"
+    const val EXIT = "exit"
+
 
 }

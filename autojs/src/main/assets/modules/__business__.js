@@ -11,5 +11,11 @@ module.exports = function (__runtime__, scope){
         this.report = function(json){
              this._business.requestFeedBackFromJs(json);
         }
+        this.stopSelf =function(){
+            this._business.requestStopSelf()
+        }
+        this.reportProfit =function(json){
+            this._business.requestDeviceReportProfit(json)
+        }
     }
 }
