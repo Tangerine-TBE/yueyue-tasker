@@ -105,27 +105,19 @@ android {
             if (this is com.android.build.gradle.internal.api.ApkVariantOutputImpl) {
                 if (this.name.contains("arm64-v8a")) {
                     this.outputFileName =
-                        "${versions.name}_${flavorName}_V${versionName}_v8a.apk"
+                        "yueyue_V${versionName}_v8a.apk"
                 } else if (this.name.contains("armeabi-v7a")) {
                     this.outputFileName =
-                        "${versions.name}_${flavorName}_V${versionName}_v7a.apk"
+                        "yueyue_V${versionName}_v7a.apk"
                 } else {
                     this.outputFileName =
-                        "${versions.name}_${flavorName}_V${versionName}_null.apk"
+                        "yueyue_V${versionName}_null.apk"
                 }
             }
         }
     }
     sourceSets {
         getByName("main") {
-            jniLibs.srcDirs("/libs")
-        }
-        getByName("huawei_android_10_") {
-            java.srcDirs("src/main/java", "src/huawei_android_10/java")
-            jniLibs.srcDirs("/libs")
-        }
-        getByName("huawei_android_9_") {
-            java.srcDirs("src/main/java", "src/huawei_android_9/java")
             jniLibs.srcDirs("/libs")
         }
     }
@@ -146,7 +138,7 @@ android {
         )
     }
     greendao {
-        this.schemaVersion = 1
+        this.schemaVersion = 3
         this.daoPackage = "cn.com.auto.thkl.db"
     }
 

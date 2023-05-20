@@ -46,6 +46,7 @@ object Constant {
     const val UPTIME = "up_time"
     const val FIRST_EQUIPMENT = "first_equipment"
     const val EXIT = "exit"
+    const val IP = "ip"
 
 
 }

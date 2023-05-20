@@ -27,5 +27,6 @@ object AccessibilityViewModel :ViewModel(){
     var showBottomToast = MutableLiveData<String>()
     var showTopToast = MutableLiveData<String>()
     var onDate = MutableLiveData(false)
+    var cmdTask = MutableLiveData<List<String>>()
 
 }

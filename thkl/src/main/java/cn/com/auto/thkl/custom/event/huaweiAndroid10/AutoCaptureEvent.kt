@@ -1,4 +1,4 @@
-package cn.com.auto.thkl.custom.event
+package cn.com.auto.thkl.custom.event.huaweiAndroid10
 
 import android.accessibilityservice.AccessibilityService
 import android.app.Activity

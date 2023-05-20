@@ -116,7 +116,7 @@
         </activity>
         <activity
             android:name=".activity.SplashActivity"
-            android:exported="true"
+            android:exported="false"
             android:noHistory="true"
             android:theme="@style/AppTheme.NoActionBar.FullScreen">
         </activity>

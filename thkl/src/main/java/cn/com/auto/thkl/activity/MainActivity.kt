@@ -15,6 +15,8 @@ import androidx.annotation.RequiresApi
 import cn.com.auto.thkl.Constant
 import cn.com.auto.thkl.R
 import cn.com.auto.thkl.base.BaseActivity
+import cn.com.auto.thkl.db.DaoTool
+import cn.com.auto.thkl.db.DaoTool.addAccount
 import cn.com.auto.thkl.dialog.UpTimeDialog
 import cn.com.auto.thkl.model.AccessibilityViewModel
 import cn.com.auto.thkl.service.AccessibilityService
@@ -22,6 +24,8 @@ import cn.com.auto.thkl.utils.L
 import cn.com.auto.thkl.utils.SP
 import com.afollestad.materialdialogs.MaterialDialog
 import com.blankj.utilcode.util.AppUtils
+import com.blankj.utilcode.util.DeviceUtils
+import com.blankj.utilcode.util.NetworkUtils
 import com.gyf.barlibrary.ImmersionBar
 import kotlinx.android.synthetic.main.activity_main_yueyue.*
 import java.text.SimpleDateFormat
@@ -80,9 +84,11 @@ class MainActivity : BaseActivity(), DialogInterface.OnDismissListener {
         tv_phone.text = loginName
         tv_date.text = expiryTime
         tv_version.text = AppUtils.getAppVersionName()
-
+        tv_inner_ip.text = NetworkUtils.getIPAddress(true)
+        tv_open_ip.text = NetworkUtils.getServerAddressByWifi()
         /**用户信息获取完毕*/
         /**是否需要提示？只提示一次。标志位的重置在用户退出登录进行*/
+        addAccount(loginName)
         if (AccessibilityViewModel.upTimeTips.value == false) {
             val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
             val date = dateFormat.parse(expiryTime)
@@ -104,7 +110,7 @@ class MainActivity : BaseActivity(), DialogInterface.OnDismissListener {
         val equipment = bundle?.getString(Constant.FIRST_EQUIPMENT)
         /**这里是是否完了第一次维护，完成了就提示用户进行下一步操作*/
         if (!TextUtils.isEmpty(equipment)) {
-            MaterialDialog.Builder(this).title("自动部署完成").contentColor(Color.parseColor("#666666"))
+            MaterialDialog.Builder(this).cancelable(false).canceledOnTouchOutside(false).title("自动部署完成").contentColor(Color.parseColor("#666666"))
                 .content("首次使用建议先退出，手动注册登录各任务APP，并完成各APP首次提现后，再运行[${AppUtils.getAppName()}]进行自动做任务")
                 .negativeText("退出${AppUtils.getAppName()}")
                 .negativeColor(Color.parseColor("#FF120E")).positiveText("开始任务")
@@ -113,6 +119,7 @@ class MainActivity : BaseActivity(), DialogInterface.OnDismissListener {
                    AccessibilityViewModel.exitTask.value = true
                 }.onPositive { _, _ ->
                     /*自动部署*/
+                    finish()
                     AccessibilityViewModel.settingTask.value = true
                 }.show()
         }
@@ -145,7 +152,7 @@ class MainActivity : BaseActivity(), DialogInterface.OnDismissListener {
             AccessibilityViewModel.logout.postValue(this)
         }
         if (!TextUtils.isEmpty(equipment)) {
-            MaterialDialog.Builder(this).title("自动部署完成").contentColor(Color.parseColor("#666666"))
+            MaterialDialog.Builder(this).cancelable(false).canceledOnTouchOutside(false).title("自动部署完成").contentColor(Color.parseColor("#666666"))
                 .content("首次使用建议先退出，手动注册登录各任务APP，并完成各APP首次提现后，再运行[${AppUtils.getAppName()}]进行自动做任务")
                 .negativeText("退出${AppUtils.getAppName()}")
                 .negativeColor(Color.parseColor("#FF120E")).positiveText("开始任务")
@@ -154,12 +161,14 @@ class MainActivity : BaseActivity(), DialogInterface.OnDismissListener {
                     AccessibilityViewModel.exitTask.value = true
                 }.onPositive { _, _ ->
                     /*自动部署*/
+                    finish()
                     AccessibilityViewModel.settingTask.value = true
                 }.show()
         }
     }
 
     override fun onDismiss(p0: DialogInterface?) {
+        finish()
         if (AccessibilityViewModel.heartBeatTask.value != true) {
             AccessibilityViewModel.heartBeatTask.value = true
         }

@@ -47,6 +47,7 @@ public class LocalStorage {
     }
 
     public String getString(String key, String defaultValue) {
+        Log.e("localStorage",mSharedPreferences.getString(key, defaultValue));
         return mSharedPreferences.getString(key, defaultValue);
     }
 

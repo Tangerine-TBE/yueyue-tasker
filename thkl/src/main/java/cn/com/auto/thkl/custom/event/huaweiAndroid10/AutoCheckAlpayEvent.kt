@@ -1,4 +1,4 @@
-package cn.com.auto.thkl.custom.event
+package cn.com.auto.thkl.custom.event.huaweiAndroid10
 
 import android.accessibilityservice.AccessibilityService
 import android.content.ComponentName
@@ -12,21 +12,19 @@ import cn.com.auto.thkl.custom.event.base.MsgType
 import cn.com.auto.thkl.custom.task.TaskProperty
 import cn.com.auto.thkl.model.AccessibilityViewModel
 
-class AutoCheckWXLoginEvent(override val task: TaskProperty) :
-    EventAction("微信登录检测", EventController.SYSTEM_EVENT), Event {
-    override var currentStep: Int = 1
-    override var runTime: Int = 120
+class AutoCheckAlpayEvent(override val task: TaskProperty) :
+    EventAction("支付宝登录检测", EventController.SYSTEM_EVENT), Event {
 
 
     override fun start(service: AccessibilityService, event: AccessibilityEvent?) {
         when (currentStep) {
             1 -> {
                 currentStep++
-                var packAgeName = "com.tencent.mm"
+                var packAgeName = "com.eg.android.AlipayGphone"
                 val intent = App.service.packageManager.getLaunchIntentForPackage(packAgeName)
                 if (intent == null) {
                     EventController.INSTANCE.removeEvent(this, MsgType.SUCCESS)/*开启下一个任务*/
-                    AccessibilityViewModel.report.postValue("没有安装微信!")
+                    AccessibilityViewModel.report.postValue("没有安装支付宝!")
                     return
                 }
                 val resolveInfo = App.service.packageManager.resolveActivity(intent!!, 0)
@@ -39,20 +37,24 @@ class AutoCheckWXLoginEvent(override val task: TaskProperty) :
             }
 
             2 -> {
-                if (event?.packageName == "com.tencent.mm") {
+                if (event!!.packageName == "com.eg.android.AlipayGphone") {
                     runEvent({
                         val rootNodeInfo = App.service.rootInActiveWindow
-                        val targetList = rootNodeInfo?.findAccessibilityNodeInfosByText("通讯录")
-                        if (targetList!!.isEmpty()) {/*没有登录*/
-                            AccessibilityViewModel.report.value = "微信没有登录"
+                        val targetList = rootNodeInfo?.findAccessibilityNodeInfosByText("我的")
+                        if (targetList!!.isEmpty()) {
+                            /*没有登录*/
+                            AccessibilityViewModel.report.value = "支付宝没有登录"
                         }
                         EventController.INSTANCE.removeEvent(this, MsgType.SUCCESS)/*开启下一个任务*/
-
-                    }, 3f)
+                    },2f)
                 }
             }
+
         }
     }
 
 
+
+    override var currentStep: Int = 1
+    override var runTime: Int = 180
 }

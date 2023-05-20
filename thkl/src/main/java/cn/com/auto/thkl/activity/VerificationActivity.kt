@@ -5,6 +5,7 @@ import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import cn.com.auto.thkl.Constant
 import cn.com.auto.thkl.R
+import cn.com.auto.thkl.model.AccessibilityViewModel
 import cn.com.auto.thkl.utils.L
 import cn.com.auto.thkl.utils.SP
 
@@ -17,15 +18,23 @@ class VerificationActivity : AppCompatActivity() {
     override fun onStart() {
         super.onStart()
         if (Intent.ACTION_MAIN == intent.action
-            && intent.hasCategory(Intent.CATEGORY_LAUNCHER)) {
+            && intent.hasCategory(Intent.CATEGORY_LAUNCHER)
+        ) {
             L.e("launcher")
-            if (SP.getBoolean(Constant.EXIT)){
+            if (AccessibilityViewModel.settingTask.value == true){
+                finish()
+                return
+            }
+            if (AccessibilityViewModel.logout.value != null) {
+                AccessibilityViewModel.logout.value = null
+            }
+            if (SP.getBoolean(Constant.EXIT)) {
                 L.e("launcher 重置")
-                SP.putBoolean(Constant.EXIT,false)
+                SP.putBoolean(Constant.EXIT, false)
             }
         } else {
             L.e("非launcher")
-            if (SP.getBoolean(Constant.EXIT)){
+            if (SP.getBoolean(Constant.EXIT)) {
                 L.e("非launcher 需要退出")
                 finish()
                 return
@@ -35,6 +44,6 @@ class VerificationActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        startActivity(Intent(this,SplashActivity::class.java))
+        startActivity(Intent(this, SplashActivity::class.java))
     }
 }

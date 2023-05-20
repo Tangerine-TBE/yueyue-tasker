@@ -1,4 +1,4 @@
-package cn.com.auto.thkl.custom.event
+package cn.com.auto.thkl.custom.event.huaweiAndroid10
 
 import android.accessibilityservice.AccessibilityService
 import android.content.Intent
@@ -15,7 +15,7 @@ import cn.com.auto.thkl.custom.task.TaskProperty
 @RequiresApi(Build.VERSION_CODES.P)
 class AutoUninstallEvent(
     override val task: TaskProperty
-) : EventAction("自动卸载应用-${task.packName}", EventController.SYSTEM_EVENT) {
+) : EventAction("自动卸载应用-${task.appName}", EventController.SYSTEM_EVENT) {
     override var currentStep = 1
 
 

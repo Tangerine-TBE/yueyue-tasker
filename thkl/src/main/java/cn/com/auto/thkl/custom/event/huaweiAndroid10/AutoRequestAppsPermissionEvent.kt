@@ -1,4 +1,4 @@
-package cn.com.auto.thkl.custom.event
+package cn.com.auto.thkl.custom.event.huaweiAndroid10
 
 import android.accessibilityservice.AccessibilityService
 import android.content.Intent
@@ -18,7 +18,7 @@ import kotlin.concurrent.thread
 @RequiresApi(Build.VERSION_CODES.P)
 class AutoRequestAppsPermissionEvent(
     override val task: TaskProperty
-) : EventAction("自动权限申请", EventController.SYSTEM_EVENT){
+) : EventAction("自动权限申请-${task.appName}", EventController.SYSTEM_EVENT){
     override var currentStep = 1
 
     private var index = 0
@@ -44,7 +44,7 @@ class AutoRequestAppsPermissionEvent(
             2 -> {
                 if (event!!.className == "com.android.settings.applications.InstalledAppDetailsTop" && event.packageName == "com.android.settings") {
                     runEvent{
-                        val target = service!!.rootInActiveWindow!!.findAccessibilityNodeInfosByText("权限")[0]
+                        val target = service.rootInActiveWindow!!.findAccessibilityNodeInfosByText("权限")[0]
                         if (target != null) {
                             target.getBoundsInScreen(rect)
                             currentStep++

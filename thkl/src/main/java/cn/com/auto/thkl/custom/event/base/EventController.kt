@@ -52,10 +52,11 @@ class EventController private constructor() {
     fun execute(eventCompleted: EventAction.OnEventCompleted?) {
         if (currentEvent != null) {
             if (eventTimeTask != null) {
-                eventTimeTask!!.stop = true
+                if (eventTimeTask?.stop == false){
+                    eventTimeTask!!.stop = true
+                }
             }
-            eventTimeTask =
-                EventTimeTask(currentEvent!!)
+            eventTimeTask = EventTimeTask(currentEvent!!)
             thread {
                 eventTimeTask!!.run()
             }
@@ -98,15 +99,18 @@ class EventController private constructor() {
     class EventTimeTask(
         private val event: Event,
     ) : Runnable {
+        private var startTime:Long = 0
         var stop = false
             set(value) {
                 if (value) {
-                    L.e("${event.name}:事件完成")
+                   val offsetTime =  System.currentTimeMillis()/1000-startTime
+                    L.e("${event.name}:事件完成---耗时${offsetTime}s")
                 }
                 field = value
             }
 
         override fun run() {
+            startTime = System.currentTimeMillis()/1000
             L.e("${event.name}:事件开始")
             while (!stop) {
                 /**运行超时策略*/

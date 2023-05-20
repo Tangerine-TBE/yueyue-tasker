@@ -47,6 +47,7 @@ class SplashActivity : BaseActivity() {
             }else{
                 startActivity(Intent(this, CheckUpdateActivity::class.java))
             }
+            finish()
         }, 2000)
 
 

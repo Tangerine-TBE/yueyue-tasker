@@ -1,4 +1,4 @@
-package cn.com.auto.thkl.custom.event
+package cn.com.auto.thkl.custom.event.huaweiAndroid10
 
 import android.accessibilityservice.AccessibilityService
 import android.content.Intent
@@ -20,7 +20,7 @@ import kotlin.concurrent.thread
 @RequiresApi(Build.VERSION_CODES.P)
 class AutoRequestPermissionEvent(
     override val task: TaskProperty
-) : EventAction("自动权限申请-${task.packName}", EventController.SYSTEM_EVENT) {
+) : EventAction("自动权限申请-${task.appName}", EventController.SYSTEM_EVENT) {
     override var currentStep = 1
     private var index = 0
     override var runTime: Int = 180

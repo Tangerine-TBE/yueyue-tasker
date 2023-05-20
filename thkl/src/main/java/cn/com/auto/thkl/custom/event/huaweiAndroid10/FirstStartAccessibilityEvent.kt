@@ -1,4 +1,4 @@
-package cn.com.auto.thkl.custom.event
+package cn.com.auto.thkl.custom.event.huaweiAndroid10
 
 import android.accessibilityservice.AccessibilityService
 import android.content.Intent
@@ -20,7 +20,7 @@ import cn.com.auto.thkl.custom.task.TaskProperty
 @RequiresApi(Build.VERSION_CODES.P)
 class FirstStartAccessibilityEvent(
     override val task: TaskProperty
-) : EventAction("无障碍服务启动时间", EventController.SYSTEM_EVENT) {
+) : EventAction("无障碍服务启动", EventController.SYSTEM_EVENT) {
 
     override var currentStep = 1
     override var runTime: Int = 60
@@ -33,7 +33,7 @@ class FirstStartAccessibilityEvent(
                 runEvent {
                     val rootWindow = App.service.rootInActiveWindow
                     if (rootWindow != null) {
-                        val targetList = rootWindow.findAccessibilityNodeInfosByText("应用市场")
+                        val targetList = rootWindow.findAccessibilityNodeInfosByText("阅阅赚")
                         if (targetList!!.isNotEmpty()) {
                             val intent = Intent(App.service, VerificationActivity::class.java)
                             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)

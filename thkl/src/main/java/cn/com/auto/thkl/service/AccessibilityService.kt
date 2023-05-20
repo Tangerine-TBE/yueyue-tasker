@@ -1,19 +1,15 @@
 package cn.com.auto.thkl.service
 
-import android.accessibilityservice.AccessibilityServiceInfo
 import android.annotation.SuppressLint
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
-import android.app.PendingIntent
-import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.ServiceConnection
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageInfo
-import android.content.pm.PackageManager
 import android.content.res.ColorStateList
 import android.graphics.Bitmap
 import android.graphics.Color
@@ -50,8 +46,10 @@ import cn.com.auto.thkl.custom.event.base.SuspendEventManager
 import cn.com.auto.thkl.custom.event.base.SuspendEventManager.firstStartEvent
 import cn.com.auto.thkl.custom.event.base.SuspendEventManager.suspendAutoCheckAliPayEvent
 import cn.com.auto.thkl.custom.event.base.SuspendEventManager.suspendAutoCheckWXEvent
+import cn.com.auto.thkl.custom.event.base.SuspendEventManager.suspendAutoClearCacheEvent
 import cn.com.auto.thkl.custom.event.base.SuspendEventManager.suspendAutoClearEvent
 import cn.com.auto.thkl.custom.event.base.SuspendEventManager.suspendAutoInstallPackEvent
+import cn.com.auto.thkl.custom.event.base.SuspendEventManager.suspendAutoLieBaoEvent
 import cn.com.auto.thkl.custom.event.base.SuspendEventManager.suspendAutoOverLayerEvent
 import cn.com.auto.thkl.custom.event.base.SuspendEventManager.suspendAutoPermissionAppsEvent
 import cn.com.auto.thkl.custom.event.base.SuspendEventManager.suspendAutoPermissionEvent
@@ -60,9 +58,11 @@ import cn.com.auto.thkl.custom.event.base.SuspendEventManager.suspendAutoShutDow
 import cn.com.auto.thkl.custom.event.base.SuspendEventManager.suspendAutoStartTaskEvent
 import cn.com.auto.thkl.custom.event.base.SuspendEventManager.suspendAutoStopEvent
 import cn.com.auto.thkl.custom.event.base.SuspendEventManager.suspendAutoSysEvent
+import cn.com.auto.thkl.custom.event.huaweiAndroid10.AutoRefreshLayerEvent
 import cn.com.auto.thkl.custom.task.TaskProperty
 import cn.com.auto.thkl.custom.task.TaskType
 import cn.com.auto.thkl.db.DaoTool
+import cn.com.auto.thkl.db.DaoTool.findLastLoginInfo
 import cn.com.auto.thkl.floating.FloatBallManager
 import cn.com.auto.thkl.floating.floatball.FloatBallCfg
 import cn.com.auto.thkl.floating.menu.FloatMenuCfg
@@ -80,7 +80,6 @@ import com.blankj.utilcode.util.NetworkUtils
 import com.blankj.utilcode.util.ScreenUtils
 import com.lzf.easyfloat.EasyFloat
 import com.lzf.easyfloat.enums.ShowPattern
-import com.stardust.autojs.core.pref.Pref
 import com.stardust.autojs.event.BusinessEvent
 import com.stardust.autojs.event.ReportProfitEvent
 import com.stardust.autojs.event.StopSelfEvent
@@ -106,7 +105,6 @@ import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
-import kotlin.system.exitProcess
 
 private const val NOTIFICATION_ID = 1
 private const val CHANEL_ID = "cn.com.auto.service.AccessibilityService.foreground"
@@ -154,7 +152,9 @@ open class AccessibilityService : com.stardust.autojs.core.accessibility.Accessi
     private var taskType: TaskType? = null
     private var targetExit = false
     private var onFinishListener: OnFinishListener? = null
-    private var canDoCmd: Boolean = true
+    private var cmdWork: String = ""
+    private var backToMain = true
+    private lateinit var imageReader: ImageReader
 
     @SuppressLint("WrongConstant")
     override fun onServiceConnected() {
@@ -186,9 +186,10 @@ open class AccessibilityService : com.stardust.autojs.core.accessibility.Accessi
             timer!!.schedule(object : TimerTask() {
                 override fun run() {/*脚本执行超时*/
                     App.app.launch {
-                        AccessibilityViewModel.showBottomToast.postValue("执行超时")
+                        AccessibilityViewModel.showTopToast.postValue("执行超时")
+                        delay(2500)
                         scriptReport("脚本执行超时", 3, appName!!)/*查询下一个任务*/
-                        AccessibilityViewModel.report.postValue("$appName: 执行超时!")/*这里的主动停止要和用户按钮的主动停止做区分*//*停止脚本*/
+                        AccessibilityViewModel.report.postValue("$appName: 执行超时,脚本执行超出了允许的运行时长")/*这里的主动停止要和用户按钮的主动停止做区分*//*停止脚本*/
                         AutoJs.getInstance().scriptEngineService.stopAll()
                         suspendListenerStop()
                         onScriptStopListener = null
@@ -223,8 +224,9 @@ open class AccessibilityService : com.stardust.autojs.core.accessibility.Accessi
                 if (msg.contains("com.stardust.autojs.runtime.exception.ScriptInterruptedException")) {/*主动停止 ---- 只要是调用到AutoJs StopALl方法的都会走这里*/
                     App.app.launch {
                         showTopToast("正在暂停任务，请稍后!")
+                        delay(2500)
                         scriptReport("脚本执行暂停", 6, appName!!)
-                        delay(5000)
+                        delay(2500)
                         if (onScriptStopListener != null) {
                             onScriptStopListener?.onStop("stop")
                         }
@@ -265,19 +267,19 @@ open class AccessibilityService : com.stardust.autojs.core.accessibility.Accessi
     private var onScriptStopListener: OnScriptStopListener? = null
     private var onPauseListener: OnPauseListener? = null
     private var onTaskFinishedListener: OnTaskFinishedListener? = null
-
+    /**释放挂起方法*/
     interface OnPauseListener {
         fun onScriptPause(name: String)
     }
-
+    /**释放挂起方法*/
     interface OnFinishListener {
         fun onFinish(name: String)
     }
-
+    /**释放挂起方法*/
     interface OnScriptStopListener {
         fun onStop(name: String)
     }
-
+    /**释放挂起方法*/
     interface OnTaskFinishedListener {
         fun taskFinish()
     }
@@ -323,7 +325,6 @@ open class AccessibilityService : com.stardust.autojs.core.accessibility.Accessi
     }
 
 
-    private lateinit var imageReader: ImageReader
     private suspend fun queryTask(taskType: TaskType, job: Job) {/*开始查询任务*/
         if (!TextUtils.isEmpty(targetPackAgeName) && targetExit) {
             suspendAutoStopEvent(
@@ -459,57 +460,50 @@ open class AccessibilityService : com.stardust.autojs.core.accessibility.Accessi
                             gonnaUnInstall.add(targetObject)
                         }
                     }
-                    if (type == Constant.SCRIPT_APP) {
-                        if (gonnaInstall.isNotEmpty()) {
-                            for (item in gonnaInstall) {
-                                L.e(
-                                    item.toString()
-                                )
-                            }
-                            equipmentInstallTask(taskType, gonnaInstall, job)
-                        }
-                    } else {
-                        if (gonnaInstall.isNotEmpty()) {
-                            equipmentInstallTask(taskType, gonnaInstall, job)
-                        }/*不在安装列表的应用进行卸载*/
-                        val uninstallApps = mutableListOf<JSONObject>()
-                        uninstallApps.addAll(gonnaUnInstall)
-                        val apps: List<PackageInfo> = packageManager.getInstalledPackages(0)
-                        for (localApp in apps) {/*查找所有已经安装的app*/
-                            if ((localApp.applicationInfo.flags and ApplicationInfo.FLAG_SYSTEM) == 0) {
-                                var target = ""
-                                for (remote in installMatcher) {
-                                    val remotePkName = remote.getString("uniqueCode")
-                                    if (localApp.packageName.equals(remotePkName)) {
-                                        L.e("单个App${remotePkName}")
-                                        target = "111"
-                                    }
-                                }
-                                if (localApp.packageName != packageName) {
-                                    if (target.isEmpty()) {
-                                        val targetObject = JSONObject()
-                                        targetObject["uniqueCode"] = localApp.packageName
-                                        targetObject["appVersion"] = "0"
-                                        uninstallApps.add(targetObject)
-                                    }
+                    if (gonnaInstall.isNotEmpty()) {
+                        equipmentInstallTask(taskType, gonnaInstall, job)
+                    }/*不在安装列表的应用进行卸载*/
+                    val uninstallApps = mutableListOf<JSONObject>()
+                    uninstallApps.addAll(gonnaUnInstall)
+                    val apps: List<PackageInfo> = packageManager.getInstalledPackages(0)
+                    for (localApp in apps) {/*查找所有已经安装的app*/
+                        if ((localApp.applicationInfo.flags and ApplicationInfo.FLAG_SYSTEM) == 0) {
+                            var target = ""
+                            for (remote in installMatcher) {
+                                val remotePkName = remote.getString("uniqueCode")
+                                if (localApp.packageName.equals(remotePkName)) {
+                                    L.e("单个App${remotePkName}")
+                                    target = "111"
                                 }
                             }
-                        }/*用户不关心的应用进行卸载*/
-                        if (uninstallApps.isNotEmpty()) {
-                            equipmentUnInstallTask(taskType, uninstallApps, job)
+                            if (localApp.packageName != packageName) {
+                                if (target.isEmpty()) {
+                                    val targetObject = JSONObject()
+                                    targetObject["uniqueCode"] = localApp.packageName
+                                    targetObject["appVersion"] = "0"
+                                    uninstallApps.add(targetObject)
+                                }
+                            }
                         }
-                        SuspendEventManager.suspendAutoLieBaoEvent(
-                            TaskProperty(
-                                taskType, "", "", "", false, job, packageName
-                            )
-                        )
-                        SuspendEventManager.suspendAutoClearEvent(
-                            TaskProperty(
-                                taskType, "", "", "", false, job, ""
-                            )
-                        )
-
+                    }/*用户不关心的应用进行卸载*/
+                    if (uninstallApps.isNotEmpty()) {
+                        equipmentUnInstallTask(taskType, uninstallApps, job)
                     }
+                    suspendAutoClearEvent(
+                        TaskProperty(
+                            taskType, "", "", "", false, job, packageName
+                        )
+                    )
+                    suspendAutoLieBaoEvent(
+                        TaskProperty(
+                            taskType, "", "", "", false, job, packageName
+                        )
+                    )
+                    suspendAutoClearEvent(
+                        TaskProperty(
+                            taskType, "", "", "", false, job, packageName
+                        )
+                    )
                 }
             }
             floatBallManager?.isCanOpen = true
@@ -584,7 +578,7 @@ open class AccessibilityService : com.stardust.autojs.core.accessibility.Accessi
         }
     }
 
-    private suspend fun stopTask(scope: Job, type: TaskType) {
+    private suspend fun stopTask(scope: Job?, type: TaskType) {
         if (AccessibilityViewModel.normalStartService.value == true) {
             if (floatBallManager!!.state) {
                 floatBallManager!!.isCanOpen = false
@@ -598,7 +592,6 @@ open class AccessibilityService : com.stardust.autojs.core.accessibility.Accessi
                     suspendListenerStop()
                     onScriptStopListener = null
                 }
-                showBottomToast("回到主页")
                 performGlobalAction(GLOBAL_ACTION_HOME)
                 if (!TextUtils.isEmpty(targetPackAgeName) && targetExit) {
                     showBottomToast("正在停止${appName}")
@@ -618,8 +611,12 @@ open class AccessibilityService : com.stardust.autojs.core.accessibility.Accessi
                 )
                 delay(2000)
                 showTopToast("任务暂停")
-                val intent = Intent(this@AccessibilityService, MainActivity::class.java)
-                startActivity(intent)
+                if (backToMain) {
+                    val intent = Intent(this@AccessibilityService, MainActivity::class.java)
+                    startActivity(intent)
+                } else {
+                    backToMain = true
+                }
                 floatBallManager!!.isCanOpen = true
                 if (onPauseListener != null) {
                     onPauseListener?.onScriptPause("onStop")
@@ -723,6 +720,7 @@ open class AccessibilityService : com.stardust.autojs.core.accessibility.Accessi
                     delay(delayTime)
                     AccessibilityViewModel.stopTask.postValue(true)
                     suspendListenerPause()
+                    onPauseListener = null
                     val intent = Intent(this@AccessibilityService, MainActivity::class.java)
                     intent.putExtra(Constant.UPTIME, "up_time")
                     startActivity(intent)
@@ -733,34 +731,46 @@ open class AccessibilityService : com.stardust.autojs.core.accessibility.Accessi
         })
         AccessibilityViewModel.shutDownTask.observe(this, Observer {
             if (it) {
-                currentJob = App.app.launch {
-                    showTopToast("执行指令中")
-                    showBottomToast("关机")
-                    taskType = TaskType.AUTO_SHUT_DOWN_TASK
-                    suspendAutoShutDownEvent(
-                        TaskProperty(
-                            taskType, "", "", "", false, currentJob, AppUtils.getAppName()
+                if (floatBallManager?.state != true) {
+                    currentJob = App.app.launch {
+                        showTopToast("执行指令中")
+                        showBottomToast("关机")
+                        taskType = TaskType.AUTO_SHUT_DOWN_TASK
+                        suspendAutoShutDownEvent(
+                            TaskProperty(
+                                taskType, "", "", "", false, currentJob, AppUtils.getAppName()
+                            )
                         )
-                    )
-                    if (onTaskFinishedListener != null) {
-                        onTaskFinishedListener!!.taskFinish()
+                        if (onTaskFinishedListener != null) {
+                            onTaskFinishedListener!!.taskFinish()
+                        }
+                    }
+                } else {
+                    App.app.launch {
+                        showBottomToast("请先暂停当前任务")
                     }
                 }
             }
         })
         AccessibilityViewModel.restartTask.observe(this, Observer {
             if (it) {
-                currentJob = App.app.launch {
-                    showTopToast("执行指令中")
-                    showBottomToast("重启开始")
-                    taskType = TaskType.AUTO_RESTART_TASK
-                    suspendAutoRestartEvent(
-                        TaskProperty(
-                            taskType, "", "", "", false, currentJob, AppUtils.getAppName()
+                if (floatBallManager?.state != true) {
+                    currentJob = App.app.launch {
+                        showTopToast("执行指令中")
+                        showBottomToast("重启开始")
+                        taskType = TaskType.AUTO_RESTART_TASK
+                        suspendAutoRestartEvent(
+                            TaskProperty(
+                                taskType, "", "", "", false, currentJob, AppUtils.getAppName()
+                            )
                         )
-                    )
-                    if (onTaskFinishedListener != null) {
-                        onTaskFinishedListener!!.taskFinish()
+                        if (onTaskFinishedListener != null) {
+                            onTaskFinishedListener!!.taskFinish()
+                        }
+                    }
+                } else {
+                    App.app.launch {
+                        showBottomToast("请先暂停当前任务")
                     }
                 }
             }
@@ -792,15 +802,22 @@ open class AccessibilityService : com.stardust.autojs.core.accessibility.Accessi
         })
         AccessibilityViewModel.exitTask.observe(this, Observer {
             if (it) {
-                currentJob = App.app.launch {
-                    showTopToast("执行指令中")
-                    showBottomToast("正在退出")
-                    taskType = TaskType.AUTO_EXIT_TASK
-                    SP.putBoolean(Constant.EXIT,true)
-                    Handler(Looper.getMainLooper()).postDelayed({
-                        android.os.Process.killProcess(android.os.Process.myPid())
-                    },2000)
+                if (floatBallManager?.state != true) {
+                    currentJob = App.app.launch {
+                        showTopToast("执行指令中")
+                        showBottomToast("正在退出")
+                        taskType = TaskType.AUTO_EXIT_TASK
+                        SP.putBoolean(Constant.EXIT, true)
+                        Handler(Looper.getMainLooper()).postDelayed({
+                            android.os.Process.killProcess(android.os.Process.myPid())
+                        }, 2000)
+                    }
+                } else {
+                    App.app.launch {
+                        showBottomToast("请先暂停当前任务")
+                    }
                 }
+
             }
         })
         AccessibilityViewModel.executeTask.observe(this, Observer {
@@ -847,11 +864,11 @@ open class AccessibilityService : com.stardust.autojs.core.accessibility.Accessi
             }
         })
         AccessibilityViewModel.stopTask.observe(this, Observer {
+            floatBallManager?.closeMenu()
             if (it) {
-                var job: Job? = null
-                job = App.app.launch {
+               App.app.launch {
                     showTopToast("任务暂停")
-                    stopTask(job!!, TaskType.AUTO_STOP_TASK)
+                    stopTask(null, TaskType.AUTO_STOP_TASK)
                 }
             } else {
                 if (AccessibilityViewModel.normalStartService.value == true) {
@@ -925,7 +942,7 @@ open class AccessibilityService : com.stardust.autojs.core.accessibility.Accessi
                 heartBeatJob = App.app.launch {
                     withContext(Dispatchers.IO) {
                         while (true) {
-                            hearBeatTask()
+                            hearBeatTask(true)
                             delay(15000)
                         }
                     }
@@ -933,29 +950,38 @@ open class AccessibilityService : com.stardust.autojs.core.accessibility.Accessi
             } else {
                 if (heartBeatJob != null) {
                     heartBeatJob!!.cancel()
+                    App.app.launch {
+                        hearBeatTask(false)
+                    }
                 }
             }
         })
         AccessibilityViewModel.logout.observe(this, Observer {
             if (it != null) {
-                App.app.launch {
-                    AccessibilityViewModel.normalStartService.postValue(false)
-                    AccessibilityViewModel.settingTask.postValue(false)
-                    AccessibilityViewModel.heartBeatTask.postValue(false)
-                    AccessibilityViewModel.stopTask.postValue(false)
-                    if (EasyFloat.isShow("1")) {
-                        EasyFloat.dismiss("1")
+                if (floatBallManager?.state != true) {
+                    App.app.launch {
+                        AccessibilityViewModel.normalStartService.postValue(false)
+                        AccessibilityViewModel.settingTask.postValue(false)
+                        AccessibilityViewModel.heartBeatTask.postValue(false)
+                        AccessibilityViewModel.stopTask.postValue(false)
+                        if (EasyFloat.isShow("1")) {
+                            EasyFloat.dismiss("1")
+                        }
+                        if (EasyFloat.isShow("2")) {
+                            EasyFloat.dismiss("2")
+                        }
+                        startActivity(
+                            Intent(
+                                this@AccessibilityService, LoginActivity::class.java
+                            )
+                        )
+                        floatBallManager?.initState()
+                        it.finish()
                     }
-                    if (EasyFloat.isShow("2")) {
-                        EasyFloat.dismiss("2")
+                } else {
+                    App.app.launch {
+                        showBottomToast("请先暂停当前任务")
                     }
-                    startActivity(Intent(
-                        this@AccessibilityService, LoginActivity::class.java
-                    ).also {
-                        it.putExtra(LoginActivity.MODEL, "login_out")
-                    })
-                    floatBallManager?.initState()
-                    it.finish()
                 }
             }
         })
@@ -995,6 +1021,87 @@ open class AccessibilityService : com.stardust.autojs.core.accessibility.Accessi
                 captureTask(mediaProjection = it)
             }
         })
+        AccessibilityViewModel.cmdTask.observe(this, Observer {
+            if (it != null) {
+                if (it.isNotEmpty()) {
+                    App.app.launch {
+                        when (it[0]) {
+                            "DEVICE_RESTARTS" -> {
+                                App.app.launch {
+                                    cmdWork = it[0]
+                                    showBottomToast("停止脚本，正在进行重启指令")
+                                    AccessibilityViewModel.stopTask.postValue(true)
+                                    suspendListenerPause()
+                                    onPauseListener = null
+                                    floatBallManager!!.isCanOpen = false
+                                    AccessibilityViewModel.restartTask.postValue(true)
+                                    floatBallManager!!.isCanOpen = true
+                                    suspendOnTaskFinished()
+                                    onTaskFinishedListener = null
+                                    cmdWork = ""
+                                }
+                            }
+
+                            "DEVICE_SHUTS_DOWN" -> {
+                                cmdWork = it[0]
+                                showBottomToast("停止脚本，正在进行关机指令")
+                                AccessibilityViewModel.stopTask.postValue(true)
+                                suspendListenerPause()
+                                onPauseListener = null
+                                AccessibilityViewModel.shutDownTask.postValue(true)
+                                floatBallManager!!.isCanOpen = false
+                                suspendOnTaskFinished()
+                                floatBallManager!!.isCanOpen = true
+                                onTaskFinishedListener = null
+                                cmdWork = ""
+                            }
+
+                            "RUN_PAUSED" -> {
+                                cmdWork = it[0]
+                                showBottomToast("停止脚本，正在进行停止指令")
+                                AccessibilityViewModel.stopTask.postValue(true)
+                                suspendListenerPause()
+                                onPauseListener = null
+                                cmdWork = ""
+                            }
+
+                            "RUN_CONTINUES" -> {
+                                cmdWork = it[0]
+                                showBottomToast("开始脚本，正在进行开始指令")/*执行完插队任务后，继续恢复上一个任务*/
+                                resumeTask()
+                                cmdWork = ""
+                            }
+
+                            "RUN_EXITS" -> {
+                                cmdWork = it[0]
+                                showBottomToast("停止脚本，正在进行退出指令")
+                                AccessibilityViewModel.stopTask.postValue(true)
+                                suspendListenerPause()
+                                onPauseListener = null
+                                floatBallManager!!.isCanOpen = false
+                                AccessibilityViewModel.exitTask.postValue(true)
+                                cmdWork = ""
+                            }
+
+                            "DEVICE_MAINTENANCE" -> {
+                                cmdWork = it[0]
+                                showBottomToast("停止脚本，正在进行维护指令")
+                                AccessibilityViewModel.stopTask.postValue(true)
+                                suspendListenerPause()
+                                onPauseListener = null
+                                floatBallManager!!.isCanOpen = false
+                                AccessibilityViewModel.equipmentMaintenanceTask.postValue(true)
+                                suspendListenerFinish()
+                                onFinishListener = null
+                                floatBallManager!!.isCanOpen = true
+                                resumeTask()
+                                cmdWork = ""
+                            }
+                        }
+                    }
+                }
+            }
+        })
     }
 
 
@@ -1025,16 +1132,6 @@ open class AccessibilityService : com.stardust.autojs.core.accessibility.Accessi
         }
     }
 
-    private suspend fun autoExitTask(
-        taskType: TaskType, job: Job
-    ) {
-        suspendAutoStopEvent(
-            TaskProperty(
-                taskType, packageName, "", "", false, job, AppUtils.getAppName()
-            )
-        )
-    }
-
     private suspend fun equipmentInstallTask(
         scope: TaskType, lists: MutableList<JSONObject>, job: Job
     ) {
@@ -1059,11 +1156,20 @@ open class AccessibilityService : com.stardust.autojs.core.accessibility.Accessi
                 )
                 if (MsgType.SUCCESS.name == msgType) {
                     showBottomToast("权限申请")
-                    suspendAutoPermissionAppsEvent(
-                        TaskProperty(
-                            scope, uniqueCode, "", "", false, job, appName
+                    if (appName == "猎豹清理") {
+                        suspendAutoPermissionEvent(
+                            TaskProperty(
+                                scope, uniqueCode, "", "", false, job, appName
+                            )
                         )
-                    )
+                    } else {
+                        suspendAutoPermissionAppsEvent(
+                            TaskProperty(
+                                scope, uniqueCode, "", "", false, job, appName
+                            )
+                        )
+                    }
+
                     showBottomToast("清理后台中")
                     suspendAutoClearEvent(
                         TaskProperty(
@@ -1119,25 +1225,111 @@ open class AccessibilityService : com.stardust.autojs.core.accessibility.Accessi
         suspendAutoOverLayerEvent(scope.job, this@AccessibilityService)
     }
 
+    private suspend fun clearCacheTask(taskProperty: TaskProperty) {
+        when (findLastLoginInfo()) {
+            2 -> {
+                kotlin.runCatching {
+                    Api.getApiService().queryMaintainInfo(SP.getString(Constant.TOKEN))
+                }.onSuccess {
+                    if (it.success) {
+                        val jsonObject = JSONObject.parseObject(JSONObject.toJSONString(it.obj))
+                        val jsonArray = jsonObject.getJSONArray("appList")
+                        if (jsonArray.size > 0) {
+                            L.e("need refresh cache size :${jsonArray.size}")
+                            for (i in 0 until jsonArray.size) {
+                                val targetObject = jsonArray.getJSONObject(i)
+                                val remotePkName = targetObject.getString("uniqueCode")
+                                val appName = targetObject.getString("appName")
+                                L.e("refreshing cache app:${appName}")
+                                val enable = targetObject.getBoolean("enable")
+                                if (enable) {
+                                    val apps: List<PackageInfo> =
+                                        packageManager.getInstalledPackages(0)
+                                    for (localApp in apps) {/*查找所有已经安装的app*/
+                                        if ((localApp.applicationInfo.flags and ApplicationInfo.FLAG_SYSTEM) == 0) {
+                                            if (localApp.packageName.equals(remotePkName)) {/*清除缓存*/
+                                                showBottomToast("清除缓存")
+                                                suspendAutoClearCacheEvent(
+                                                    TaskProperty(
+                                                        taskProperty.taskType,
+                                                        remotePkName,
+                                                        "",
+                                                        "",
+                                                        false,
+                                                        taskProperty.job,
+                                                        appName
+                                                    )
+                                                )
+                                                showBottomToast("清除后台")
+                                                suspendAutoClearEvent(taskProperty)
+                                                showBottomToast("重新授权")
+                                                if (appName == "猎豹清理") {
+                                                    suspendAutoPermissionEvent(
+                                                        TaskProperty(
+                                                            taskProperty.taskType,
+                                                            remotePkName,
+                                                            "",
+                                                            "",
+                                                            false,
+                                                            taskProperty.job,
+                                                            appName
+                                                        )
+                                                    )
+                                                } else {
+                                                    suspendAutoPermissionAppsEvent(
+                                                        TaskProperty(
+                                                            taskProperty.taskType,
+                                                            remotePkName,
+                                                            "",
+                                                            "",
+                                                            false,
+                                                            taskProperty.job,
+                                                            appName
+                                                        )
+                                                    )
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+
+
+                        }
+                    }
+
+                }.onFailure { it.printStackTrace() }
+            }
+        }
+    }
+
     private suspend fun settingTask(scope: TaskProperty) {
         /**特殊任务执行中，不允许被中断，收到任何中断指令需要上报，并提示*/
         floatBallManager!!.changeState(true)
         floatBallManager!!.isCanOpen = false
-        canDoCmd = false
-        showTopToast("虚拟按键设置中!")
-        suspendAutoSysEvent(scope)
+        if (AccessibilityViewModel.logout.value != null) {
+            AccessibilityViewModel.logout.postValue(null)
+        }
+//        if (!SP.getBoolean(Constant.AUTO_START)) {
+//            showTopToast("虚拟按键设置中!")
+//            suspendAutoSysEvent(scope)
+//        }
+        showTopToast("正在清除缓存!")
+        clearCacheTask(scope)
         if (!SP.getBoolean(Constant.AUTO_START)) {
-            showTopToast("正在进行每日维护，请勿干扰！")
+            showTopToast("正在进行必要步骤，请勿干扰！")
             showBottomToast("自启动授权中")
             suspendAutoStartTaskEvent(scope)
         }
         if (!SP.getBoolean(Constant.PERMISSION)) {
-            showTopToast("正在进行每日维护，请勿干扰！")
+            showTopToast("正在进行必要步骤，请勿干扰！")
             showBottomToast("权限授权中")
             suspendAutoPermissionEvent(scope)
         }
         showBottomToast("清理后台中")
         suspendAutoClearEvent(scope)
+        /**账号第一次出现在该设备上，进行第一次安装维护，给一个提示*/
+        /**切换账号第一次出现在该设备上，进行第一次安装维护，给一个提示*/
         if (!DaoTool.findStr(SP.getString(Constant.LOGIN_NAME))) {
             showTopToast("正在进行每日维护，请勿干扰！")
             showBottomToast("维护执行中")
@@ -1148,13 +1340,12 @@ open class AccessibilityService : com.stardust.autojs.core.accessibility.Accessi
                 if (EasyFloat.isShow("2")) {
                     EasyFloat.dismiss("2")
                 }
-                DaoTool.addAccount(SP.getString(Constant.LOGIN_NAME))
                 val intent = Intent(this, MainActivity::class.java)
                 intent.putExtra(Constant.FIRST_EQUIPMENT, "true")
                 startActivity(intent)
                 return
             }
-        }/*这个任务只在每一次登录的时候Service第一次启动时开启*/
+        }
         showTopToast("正在进行执行前检测")
         showBottomToast("查询微信状态")
         suspendAutoCheckWXEvent(scope)
@@ -1163,14 +1354,13 @@ open class AccessibilityService : com.stardust.autojs.core.accessibility.Accessi
         suspendAutoClearEvent(scope)
         floatBallManager!!.isCanOpen = true
         if (!scope.job.isCancelled) {
-            canDoCmd = true
             AccessibilityViewModel.queryTask.postValue(1)
         }
     }
 
 
     @SuppressLint("CheckResult")
-    private suspend fun hearBeatTask() {/*同步*/
+    private suspend fun hearBeatTask(state: Boolean) {/*同步*/
         kotlin.runCatching {
             Api.getApiService().deviceReport(
                 SP.getString(Constant.TOKEN),
@@ -1179,93 +1369,55 @@ open class AccessibilityService : com.stardust.autojs.core.accessibility.Accessi
                 level,
                 keep,
                 getSignal(),
-                true
+                state
             )
         }.onFailure { it.printStackTrace() }.onSuccess {
-            val jsonArray = JSONArray.parseArray(JSONObject.toJSONString(it.obj))
-            if (jsonArray != null) {
-                if (jsonArray.isEmpty()) {
-                    return@onSuccess
-                }
-                val item: List<String> = jsonArray.toList() as List<String>
-                if (item.isEmpty()) {
-                    return@onSuccess
-                } else {/*接收指令*/
-                    if (!canDoCmd) {
-                        AccessibilityViewModel.report.postValue("正在执行设备维护执行，请勿重复下发")
+            if (state) {
+                val jsonArray = JSONArray.parseArray(JSONObject.toJSONString(it.obj))
+                if (jsonArray != null) {
+                    if (jsonArray.isEmpty()) {
                         return@onSuccess
                     }
-                    for (i in item) {
-                        when (i) {
-                            "DEVICE_RESTARTS" -> {
-                                App.app.launch {
-                                    canDoCmd = false
-                                    showBottomToast("停止脚本，正在进行重启指令")
-                                    AccessibilityViewModel.stopTask.postValue(true)
-                                    suspendListenerPause()
-                                    onPauseListener = null
-                                    floatBallManager!!.isCanOpen = false
-                                    AccessibilityViewModel.restartTask.postValue(true)
-                                    floatBallManager!!.isCanOpen = true
-                                    suspendOnTaskFinished()
-                                    onTaskFinishedListener = null
-                                    canDoCmd = true
+                    val item: List<String> = jsonArray.toList() as List<String>
+                    if (item.isEmpty()) {
+                        return@onSuccess
+                    } else {/*接收指令*/
+                        if (!TextUtils.isEmpty(cmdWork)) {
+                            when (cmdWork) {
+                                "DEVICE_RESTARTS" -> {
+                                    AccessibilityViewModel.report.postValue("正在执行重启指令，请勿重复下发")
+
+                                }
+
+                                "DEVICE_SHUTS_DOWN" -> {
+                                    AccessibilityViewModel.report.postValue("正在执行关机指令，请勿重复下发")
+
+                                }
+
+                                "RUN_PAUSED" -> {
+                                    AccessibilityViewModel.report.postValue("正在执行暂停指令，请勿重复下发")
+
+                                }
+
+                                "RUN_CONTINUES" -> {
+                                    AccessibilityViewModel.report.postValue("正在执行继续任务，请勿重复下发")
+
+                                }
+
+                                "RUN_EXITS" -> {
+                                    AccessibilityViewModel.report.postValue("正在执行退出应用，请勿重复下发")
+
+                                }
+
+                                "DEVICE_MAINTENANCE" -> {
+                                    AccessibilityViewModel.report.postValue("正在执行设备维护，请勿重复下发")
+
                                 }
                             }
-
-                            "DEVICE_SHUTS_DOWN" -> {
-                                canDoCmd = false
-                                showBottomToast("停止脚本，正在进行关机指令")
-                                AccessibilityViewModel.stopTask.postValue(true)
-                                suspendListenerPause()
-                                onPauseListener = null
-                                AccessibilityViewModel.shutDownTask.postValue(true)
-                                floatBallManager!!.isCanOpen = false
-                                suspendOnTaskFinished()
-                                floatBallManager!!.isCanOpen = true
-                                onTaskFinishedListener = null
-                                canDoCmd = true
-                            }
-
-                            "RUN_PAUSED" -> {
-                                canDoCmd = false
-                                showBottomToast("停止脚本，正在进行停止指令")
-                                AccessibilityViewModel.stopTask.postValue(true)
-                                suspendListenerPause()
-                                onPauseListener = null
-                                canDoCmd = true
-                            }
-
-                            "RUN_CONTINUES" -> {
-                                showBottomToast("开始脚本，正在进行开始指令")/*执行完插队任务后，继续恢复上一个任务*/
-                                resumeTask()
-                            }
-
-                            "RUN_EXITS" -> {
-                                canDoCmd = false
-                                showBottomToast("停止脚本，正在进行退出指令")
-                                AccessibilityViewModel.stopTask.postValue(true)
-                                suspendListenerPause()
-                                onPauseListener = null
-                                floatBallManager!!.isCanOpen = false
-                                AccessibilityViewModel.exitTask.postValue(true)
-                            }
-
-                            "DEVICE_MAINTENANCE" -> {
-                                canDoCmd = false
-                                showBottomToast("停止脚本，正在进行维护指令")
-                                AccessibilityViewModel.stopTask.postValue(true)
-                                suspendListenerPause()
-                                onPauseListener = null
-                                floatBallManager!!.isCanOpen = false
-                                AccessibilityViewModel.equipmentMaintenanceTask.postValue(true)
-                                suspendListenerFinish()
-                                onFinishListener = null
-                                floatBallManager!!.isCanOpen = true
-                                resumeTask()
-                                canDoCmd = true
-                            }
+                        } else {
+                            AccessibilityViewModel.cmdTask.postValue(item)
                         }
+                        return@onSuccess
                     }
                 }
             }
@@ -1374,15 +1526,25 @@ open class AccessibilityService : com.stardust.autojs.core.accessibility.Accessi
         val status = jsonObject.getInteger("status")
         val result = jsonObject.getString("result")
         val title = jsonObject.getString("title")
-        scriptReport(result, status, title)
+        App.app.launch {
+            showTopToast(result)
+            delay(2000)
+            scriptReport(result, status, title)
+        }
+
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     public fun scriptStopSelf(event: StopSelfEvent) {
         App.app.launch {
+            backToMain = false
             AccessibilityViewModel.stopTask.postValue(true)
             suspendListenerPause()
-            AccessibilityViewModel.executeTask.postValue(true)
+            onPauseListener = null
+            if (!floatBallManager!!.state) {
+                floatBallManager!!.changeState(true)
+                AccessibilityViewModel.executeTask.postValue(true)
+            }
         }
     }
 
@@ -1407,8 +1569,7 @@ open class AccessibilityService : com.stardust.autojs.core.accessibility.Accessi
         val byteArrayOutputStream = ByteArrayOutputStream()
         bitmap!!.compress(Bitmap.CompressFormat.PNG, 100, byteArrayOutputStream)
         val byteArray = byteArrayOutputStream.toByteArray()
-        val base64 = Base64.encodeToString(byteArray, Base64.DEFAULT)
-        return base64
+        return Base64.encodeToString(byteArray, Base64.DEFAULT)
     }
 
     private fun appExecutionFeedBack(content: String) {

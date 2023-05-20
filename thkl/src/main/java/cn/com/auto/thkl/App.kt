@@ -90,7 +90,6 @@ class App : MultiDexApplication(), CoroutineScope by CoroutineScope(Dispatchers.
         TimedTaskScheduler.init(this)
         initDynamicBroadcastReceivers()
         val strategy = CrashReport.UserStrategy(this)
-        strategy.appChannel = BuildConfig.SYSTEM_VALUE
         strategy.deviceID = DeviceUtils.getUniqueDeviceId()
         CrashReport.initCrashReport(this, "1830653c4a", false, strategy);
     }
@@ -176,6 +175,7 @@ class App : MultiDexApplication(), CoroutineScope by CoroutineScope(Dispatchers.
         public lateinit var handler: Handler
         val app: App
             get() = instance.get()!!
+        val EVENT_PACK_NAME = "huaweiAndroid10"
         val OFFSET_VALUE: Float
             /*2160   2560*//*2560 -2160 = 400*//*2160 == 90*//*2560 == 90+n*//*90/2160 == n/2560*//*n == 107*/
             get() = (ScreenUtils.getScreenHeight() * 80 / 2160).toFloat()

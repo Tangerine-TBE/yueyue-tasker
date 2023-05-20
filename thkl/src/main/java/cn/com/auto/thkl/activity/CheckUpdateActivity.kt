@@ -63,6 +63,12 @@ class CheckUpdateActivity : BaseActivity() {
 
     override fun onResume() {
         super.onResume()
+        startActivity(
+            Intent(
+                this@CheckUpdateActivity, AccessibilityCheckActivity::class.java
+            )
+        )
+        return
         download()
     }
     private fun download(){

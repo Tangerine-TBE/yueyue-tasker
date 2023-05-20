@@ -1,4 +1,4 @@
-package cn.com.auto.thkl.custom.event
+package cn.com.auto.thkl.custom.event.huaweiAndroid10
 
 import android.accessibilityservice.AccessibilityService
 import android.os.Build
@@ -26,40 +26,30 @@ class AutoClearEvent(override val task: TaskProperty) :
                 runEvent{
                     currentStep++
                     App.service.performGlobalAction(AccessibilityService.GLOBAL_ACTION_RECENTS)/*打开后一直等待*/
-                    thread {
-                        Thread.sleep(3000)
+                    App.handler.postDelayed ({
                         isChanged = true
                         val targetList =
                             App.service.rootInActiveWindow!!.findAccessibilityNodeInfosByViewId("com.huawei.android.launcher:id/clear_all_recents_image_button")
                         if (targetList.isEmpty()) {
                             App.service.performGlobalAction(AccessibilityService.GLOBAL_ACTION_HOME)
-                            currentStep++
+                            Thread.sleep(1500)
+                            EventController.INSTANCE.removeEvent(this, MsgType.SUCCESS)
                         } else {
                             val target = targetList[0]
                             target.getBoundsInScreen(rect)
-                            currentStep++
                             clickPoint(
                                 ((rect.right + rect.left) / 2).toFloat(),
                                 ((rect.bottom + rect.top) / 2).toFloat(),
                                 service = service,
                             )
+                            Thread.sleep(1500)
+                            EventController.INSTANCE.removeEvent(this, MsgType.SUCCESS)
                         }/*开启下一个任务*/
-                    }
+                    },3000)
                 }
-
             }
+            2->{
 
-            2 -> {
-                runEvent({
-                    /**出现最近无任务的处理方式*/
-
-                },1f)
-
-            }
-            3->{
-                runEvent {
-                    EventController.INSTANCE.removeEvent(this, MsgType.SUCCESS)
-                }
             }
         }
     }

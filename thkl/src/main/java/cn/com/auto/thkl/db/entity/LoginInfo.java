@@ -10,11 +10,21 @@ public class LoginInfo {
     @Id(autoincrement = true)
     private Long id;
     private String account;
+    private Long time;
 
-    @Generated(hash = 865373609)
-    public LoginInfo(Long id, String account) {
+    @Generated(hash = 1399828035)
+    public LoginInfo(Long id, String account, Long time) {
         this.id = id;
         this.account = account;
+        this.time = time;
+    }
+
+    public Long getTime() {
+        return time;
+    }
+
+    public void setTime(Long time) {
+        this.time = time;
     }
 
     @Generated(hash = 1911824992)

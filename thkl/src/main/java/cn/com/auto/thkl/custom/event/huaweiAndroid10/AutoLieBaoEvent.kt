@@ -1,4 +1,4 @@
-package cn.com.auto.thkl.custom.event
+package cn.com.auto.thkl.custom.event.huaweiAndroid10
 
 import android.accessibilityservice.AccessibilityService
 import android.content.ComponentName
@@ -16,12 +16,13 @@ import cn.com.auto.thkl.custom.event.base.EventController
 import cn.com.auto.thkl.custom.event.base.EventController.Companion.ALL_EVENT
 import cn.com.auto.thkl.custom.event.base.MsgType
 import cn.com.auto.thkl.custom.task.TaskProperty
+import cn.com.auto.thkl.model.AccessibilityViewModel
 import cn.com.auto.thkl.utils.L
 import cn.com.auto.thkl.utils.SP
 import kotlin.concurrent.thread
 
 class AutoLieBaoEvent(override val task: TaskProperty) :
-    EventAction("猎豹清理执行", EventController.SYSTEM_EVENT), Event {
+    EventAction("猎豹清理", EventController.SYSTEM_EVENT), Event {
     @RequiresApi(Build.VERSION_CODES.N)
     override fun start(service: AccessibilityService, event: AccessibilityEvent?) {
         when (currentStep) {
@@ -29,6 +30,11 @@ class AutoLieBaoEvent(override val task: TaskProperty) :
                 currentStep++
                 var packAgeName = "com.cleanmaster.mguard_cn"
                 val intent = App.service.packageManager.getLaunchIntentForPackage(packAgeName)
+                if (intent == null) {
+                    EventController.INSTANCE.removeEvent(this, MsgType.SUCCESS)/*开启下一个任务*/
+                    AccessibilityViewModel.report.postValue("没有安装猎豹清理!")
+                    return
+                }
                 val resolveInfo = App.service.packageManager.resolveActivity(intent!!, 0)
                 val activityName = resolveInfo?.activityInfo?.name.toString()
                 packAgeName = resolveInfo?.activityInfo?.packageName.toString()
