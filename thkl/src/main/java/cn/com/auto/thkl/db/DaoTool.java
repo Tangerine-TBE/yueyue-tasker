@@ -3,12 +3,12 @@ package cn.com.auto.thkl.db;
 import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
 
+import com.stardust.autojs.runtime.api.Device;
+
 import java.util.List;
 
-import cn.com.auto.thkl.App;
-import cn.com.auto.thkl.db.entity.AppCacheInfo;
+import cn.com.auto.thkl.db.entity.DeviceInfo;
 import cn.com.auto.thkl.db.entity.LoginInfo;
-import cn.com.auto.thkl.utils.L;
 
 public class DaoTool {
     public static DaoSession sDaoSession;
@@ -26,40 +26,41 @@ public class DaoTool {
         return !loginInfoList.isEmpty();
     }
 
+
+
+    public static void removeAccount(String account) {
+        LoginInfo loginInfo = sDaoSession.getLoginInfoDao().queryBuilder().where(LoginInfoDao.Properties.Account.eq(account)).unique();
+        if (loginInfo != null) {
+            sDaoSession.getLoginInfoDao().delete(loginInfo);
+        }
+    }
+
+    //    public static boolean findStatusWithLogin(String account){
+//        List<DeviceInfo> list = sDaoSession.getDeviceInfoDao().queryBuilder().where(DeviceInfoDao.Properties.Account.eq(account)).build().list();
+//        if (list.isEmpty()){
+//            return true;
+//        }else{
+//
+//        }
+//
+//
+//    }
+    public static void addStatusWithLogin(String account) {
+        DeviceInfo deviceInfo = new DeviceInfo();
+        deviceInfo.setAccount(account);
+        sDaoSession.getDeviceInfoDao().insert(deviceInfo);
+    }
+
+    public static boolean findStatusWithLogin(String account) {
+        List<DeviceInfo> list = sDaoSession.getDeviceInfoDao().queryBuilder().where(DeviceInfoDao.Properties.Account.eq(account)).build().list();
+        return !list.isEmpty();
+    }
+
     public static void addAccount(String account) {
         long time = System.currentTimeMillis() / 1000;
         String sql = "Insert INTO LOGIN_INFO(ACCOUNT,TIME) values (?,?)";
         sDaoSession.getDatabase().execSQL(sql, new String[]{account, String.valueOf(time)});
     }
-    public static void removeAccount(String account){
-        LoginInfo loginInfo = sDaoSession.getLoginInfoDao().queryBuilder().where(LoginInfoDao.Properties.Account.eq(account)).unique();
-        if (loginInfo != null){
-            sDaoSession.getLoginInfoDao().delete(loginInfo);
-        }
-    }
-
-    public static void insertAppCacheInfo(String json, String appName) {
-        AppCacheInfo appCacheInfo = sDaoSession.getAppCacheInfoDao().queryBuilder().where(AppCacheInfoDao.Properties.AppName.eq(appName)).unique();
-        if (appCacheInfo != null) {
-            sDaoSession.getAppCacheInfoDao().delete(appCacheInfo);
-        }
-        appCacheInfo = new AppCacheInfo();
-        appCacheInfo.setAppInfoValue(json);
-        appCacheInfo.setAppName(appName);
-        sDaoSession.getAppCacheInfoDao().insert(appCacheInfo);
-    }
-
-    public static void removeAppCacheInfo(String appName) {
-        AppCacheInfo appCacheInfo = sDaoSession.getAppCacheInfoDao().queryBuilder().where(AppCacheInfoDao.Properties.AppName.eq(appName)).unique();
-        if (appCacheInfo != null) {
-            sDaoSession.getAppCacheInfoDao().delete(appCacheInfo);
-        }
-    }
-
-    public static List<AppCacheInfo> findAllAppCacheInfo() {
-        return sDaoSession.getAppCacheInfoDao().queryBuilder().list();
-    }
-
     public static int findLastLoginInfo() {
         List<LoginInfo> list = sDaoSession.getLoginInfoDao().queryBuilder().orderDesc(LoginInfoDao.Properties.Time).build().list();
         if (list.isEmpty()) {

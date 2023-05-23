@@ -87,9 +87,7 @@ class LoginActivity : BaseActivity() {
         } else {
             AccessibilityViewModel.overLayerTask.value = true
         }
-        btn_test.setOnClickListener {
 
-        }
 
     }
 

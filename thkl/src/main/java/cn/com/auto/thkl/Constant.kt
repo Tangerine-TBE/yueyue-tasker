@@ -7,9 +7,11 @@ object Constant {
 
     const val Exception =
         "main();\n" + "function main(){\n" + "\n" + "try{\n" + "\tthrow \"THKLException\"\t\n" + "}catch(e){\n" + "\t\t\n" + "}\n" + "\n" + "console.log(\"jixu\")\n" + "\n" + "}"
-    const val BASE_URL =
+    const val BASE_URL_DEBUG =
 //        "http://192.168.31.24:8060/"
         "http://192.168.31.52:8060/"
+    const val BASE_URL_RELEASE =
+        "http://szthkj.f3322.net:20960/"
 
     /*would share to javaScript*/
     const val TOKEN = "token"
@@ -42,9 +44,7 @@ object Constant {
     const val AUTO_START = "auto_start"
 
     const val SCRIPT_APP = "scriptApp"//维护
-    const val UNINSTALL_APP = "uninstallApp"//维护
     const val UPTIME = "up_time"
-    const val FIRST_EQUIPMENT = "first_equipment"
     const val EXIT = "exit"
     const val IP = "ip"
 

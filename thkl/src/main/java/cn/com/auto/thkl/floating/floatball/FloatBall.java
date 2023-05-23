@@ -1,5 +1,6 @@
 package cn.com.auto.thkl.floating.floatball;
 
+import android.animation.ValueAnimator;
 import android.app.Activity;
 import android.content.Context;
 import android.content.res.Configuration;
@@ -12,6 +13,9 @@ import android.view.MotionEvent;
 import android.view.ViewConfiguration;
 import android.view.ViewGroup;
 import android.view.WindowManager;
+import android.view.animation.Animation;
+import android.view.animation.LinearInterpolator;
+import android.view.animation.RotateAnimation;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -52,6 +56,7 @@ public class FloatBall extends FrameLayout implements ICarrier, GlobalKeyObserve
     private boolean mHideHalfLater = true;
     private boolean mLayoutChanged = false;
     private int mSleepX = -1;
+    private Animation animation;
 
     public FloatBall(Context context, FloatBallManager floatBallManager, FloatBallCfg config) {
         super(context);
@@ -73,6 +78,13 @@ public class FloatBall extends FrameLayout implements ICarrier, GlobalKeyObserve
         mRunner = new ScrollRunner(this);
         GlobalKeyObserver.getSingleton().addVolumeDownListener(this);
         mVelocity = new MotionVelocityUtil(context);
+        animation = new RotateAnimation(360f,   0f,Animation.RELATIVE_TO_SELF,
+                0.5f,Animation.RELATIVE_TO_SELF,
+                0.5f);
+        animation.setFillAfter(true);  // 设置保持动画最后的状态
+        animation.setDuration(10 * 1000);// 设置动画时间
+        animation.setRepeatCount(ValueAnimator.INFINITE);
+        animation.setInterpolator(new LinearInterpolator());// 设置插入器
     }
 
     private void initLayoutParams(Context context) {
@@ -86,6 +98,7 @@ public class FloatBall extends FrameLayout implements ICarrier, GlobalKeyObserve
         Drawable newIcon = icon.mutate();
         newIcon.setColorFilter(Color.GREEN, PorterDuff.Mode.SRC_ATOP);
         floatBallManager.setState(true);
+        imageView.startAnimation(animation);
     }
 
     public final void initState() {
@@ -97,6 +110,7 @@ public class FloatBall extends FrameLayout implements ICarrier, GlobalKeyObserve
     }
 
     public final void setUnNormalState() {
+        imageView.clearAnimation();
         final Drawable icon = mConfig.mIcon;
         mSize = mConfig.mSize;
         Util.setBackground(imageView, icon);
@@ -206,27 +220,6 @@ public class FloatBall extends FrameLayout implements ICarrier, GlobalKeyObserve
     public void onLayoutChange() {
         mLayoutChanged = true;
         requestLayout();
-    }
-
-    @Override
-    public boolean onTouchEvent(MotionEvent event) {
-//        int action = event.getAction();
-//        int x = (int) event.getRawX();
-//        int y = (int) event.getRawY();
-//        mVelocity.acquireVelocityTracker(event);
-//        switch (action) {
-//            case MotionEvent.ACTION_DOWN:
-//                touchDown(x, y);
-//                break;
-//            case MotionEvent.ACTION_MOVE:
-//                touchMove(x, y);
-//                break;
-//            case MotionEvent.ACTION_UP:
-//            case MotionEvent.ACTION_CANCEL:
-//                touchUp();
-//                break;
-//        }
-        return super.onTouchEvent(event);
     }
 
     private void touchDown(int x, int y) {

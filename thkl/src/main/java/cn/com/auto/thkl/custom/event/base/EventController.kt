@@ -127,7 +127,7 @@ class EventController private constructor() {
                         INSTANCE.removeEvent(event, MsgType.TIME_OUT)
                         AccessibilityViewModel.retry.postValue(event.task)/*重试任务，非事件！*/
                         AccessibilityViewModel.showBottomToast.postValue("${event.name}-运行超时")
-                        AccessibilityViewModel.report.postValue("${event.name}-运行超时")/*超时汇报*/
+//                        AccessibilityViewModel.report.postValue("${event.name}-运行超时")/*超时汇报*/
                         return
                     }
                 }

@@ -33,7 +33,7 @@ class FirstStartAccessibilityEvent(
                 runEvent {
                     val rootWindow = App.service.rootInActiveWindow
                     if (rootWindow != null) {
-                        val targetList = rootWindow.findAccessibilityNodeInfosByText("阅阅赚")
+                        val targetList = rootWindow.findAccessibilityNodeInfosByViewId("com.huawei.android.launcher:id/launcher_root_view")
                         if (targetList!!.isNotEmpty()) {
                             val intent = Intent(App.service, VerificationActivity::class.java)
                             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
@@ -51,7 +51,13 @@ class FirstStartAccessibilityEvent(
                     }
 
                 }
-
+//                runEvent{
+//                    val intent = Intent()
+//                    intent.setClass(App.service,VerificationActivity::class.java)
+//                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+//                    App.service.startActivity(intent)
+//                    EventController.INSTANCE.removeEvent(this, MsgType.SUCCESS)/*开启下一个任务*/
+//                }
             }
         }
     }

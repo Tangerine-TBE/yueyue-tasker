@@ -1,11 +1,8 @@
 package cn.com.auto.thkl.activity
 
 import android.annotation.SuppressLint
-import android.content.ComponentName
 import android.content.DialogInterface
 import android.content.Intent
-import android.content.ServiceConnection
-import android.content.pm.PackageManager
 import android.graphics.Color
 import android.os.Build
 import android.os.Handler
@@ -19,7 +16,6 @@ import cn.com.auto.thkl.db.DaoTool
 import cn.com.auto.thkl.db.DaoTool.addAccount
 import cn.com.auto.thkl.dialog.UpTimeDialog
 import cn.com.auto.thkl.model.AccessibilityViewModel
-import cn.com.auto.thkl.service.AccessibilityService
 import cn.com.auto.thkl.utils.L
 import cn.com.auto.thkl.utils.SP
 import com.afollestad.materialdialogs.MaterialDialog
@@ -29,7 +25,6 @@ import com.blankj.utilcode.util.NetworkUtils
 import com.gyf.barlibrary.ImmersionBar
 import kotlinx.android.synthetic.main.activity_main_yueyue.*
 import java.text.SimpleDateFormat
-import kotlin.system.exitProcess
 
 
 /**
@@ -88,7 +83,7 @@ class MainActivity : BaseActivity(), DialogInterface.OnDismissListener {
         tv_open_ip.text = NetworkUtils.getServerAddressByWifi()
         /**用户信息获取完毕*/
         /**是否需要提示？只提示一次。标志位的重置在用户退出登录进行*/
-        addAccount(loginName)
+
         if (AccessibilityViewModel.upTimeTips.value == false) {
             val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
             val date = dateFormat.parse(expiryTime)
@@ -105,20 +100,18 @@ class MainActivity : BaseActivity(), DialogInterface.OnDismissListener {
             }
             AccessibilityViewModel.upTimeTips.value = true
         }
-        /**登录成功后*/
-        val bundle = intent?.extras
-        val equipment = bundle?.getString(Constant.FIRST_EQUIPMENT)
-        /**这里是是否完了第一次维护，完成了就提示用户进行下一步操作*/
-        if (!TextUtils.isEmpty(equipment)) {
+        /*当*/
+        val intent = intent
+       val bundle =  intent.extras
+       val scriptApp =  bundle?.getString(Constant.SCRIPT_APP)
+        if (!TextUtils.isEmpty(scriptApp)){
             MaterialDialog.Builder(this).cancelable(false).canceledOnTouchOutside(false).title("自动部署完成").contentColor(Color.parseColor("#666666"))
                 .content("首次使用建议先退出，手动注册登录各任务APP，并完成各APP首次提现后，再运行[${AppUtils.getAppName()}]进行自动做任务")
                 .negativeText("退出${AppUtils.getAppName()}")
                 .negativeColor(Color.parseColor("#FF120E")).positiveText("开始任务")
                 .positiveColor(Color.parseColor("#09BC21")).onNegative { _, _ ->
-                    /*手动部署*/
-                   AccessibilityViewModel.exitTask.value = true
+                    AccessibilityViewModel.exitTask.value = true
                 }.onPositive { _, _ ->
-                    /*自动部署*/
                     finish()
                     AccessibilityViewModel.settingTask.value = true
                 }.show()
@@ -147,39 +140,56 @@ class MainActivity : BaseActivity(), DialogInterface.OnDismissListener {
         super.onNewIntent(intent)
         val bundle = intent?.extras
         val uptime = bundle?.getString(Constant.UPTIME)
-        val equipment = bundle?.getString(Constant.FIRST_EQUIPMENT)
         if (!TextUtils.isEmpty(uptime)) {
             AccessibilityViewModel.logout.postValue(this)
-        }
-        if (!TextUtils.isEmpty(equipment)) {
-            MaterialDialog.Builder(this).cancelable(false).canceledOnTouchOutside(false).title("自动部署完成").contentColor(Color.parseColor("#666666"))
-                .content("首次使用建议先退出，手动注册登录各任务APP，并完成各APP首次提现后，再运行[${AppUtils.getAppName()}]进行自动做任务")
-                .negativeText("退出${AppUtils.getAppName()}")
-                .negativeColor(Color.parseColor("#FF120E")).positiveText("开始任务")
-                .positiveColor(Color.parseColor("#09BC21")).onNegative { _, _ ->
-                    /*手动部署*/
-                    AccessibilityViewModel.exitTask.value = true
-                }.onPositive { _, _ ->
-                    /*自动部署*/
-                    finish()
-                    AccessibilityViewModel.settingTask.value = true
-                }.show()
         }
     }
 
     override fun onDismiss(p0: DialogInterface?) {
-        finish()
+        /**登录成功后*/
+        /**是否进行自动维护部署*/
+        /*开始心跳*/
         if (AccessibilityViewModel.heartBeatTask.value != true) {
             AccessibilityViewModel.heartBeatTask.value = true
         }
+        /*开始计时*/
         if (AccessibilityViewModel.onDate.value != true) {
             AccessibilityViewModel.onDate.value = true
         }
         if (AccessibilityViewModel.normalStartService.value != true) {
             AccessibilityViewModel.normalStartService.value = true
         }
-        if (AccessibilityViewModel.settingTask.value != true) {/*清除所有准备要进行的消息*/
-            AccessibilityViewModel.settingTask.value = true
+        if (!DaoTool.findStatusWithLogin(SP.getString(Constant.LOGIN_NAME))) {
+            MaterialDialog.Builder(this).title("欢迎使用阅阅乐")
+                .contentColor(Color.parseColor("#666666"))
+                .content("你的手机机型[${DeviceUtils.getManufacturer()}:${DeviceUtils.getModel()}]未认证,可尝试使用品牌[5G]默认参数进行自动部署,收益可能受轻微影响。部署时间可能较长(包括系统设置和下载安装任务APP),请耐心等待。")
+                .negativeText("手动部署").negativeColor(Color.parseColor("#FF120E"))
+                .neutralText("已完成部署").neutralColor(Color.parseColor("#5C58BF"))
+                .positiveText("自动部署").positiveColor(Color.parseColor("#09BC21"))
+                .onNegative { _, _ ->
+                    /*手动部署*/
+                        AccessibilityViewModel.exitTask.value = true
+                }.onNeutral { _, _ ->
+                    /*已完成部署*/
+                    MaterialDialog.Builder(this).title("欢迎使用阅阅赚")
+                        .contentColor(Color.parseColor("#666666"))
+                        .content("提示:您已手动完成部署，立即开始代你做任务")
+                        .positiveText("开始任务").positiveColor(Color.parseColor("#09BC21"))
+                        .onPositive{_,_->
+                            if (AccessibilityViewModel.settingTask.value != true) {/*清除所有准备要进行的消息*/
+                                AccessibilityViewModel.settingTask.value = true
+                            }
+                        }.show()
+                }.onPositive { _, _ ->
+                    /*自动部署*/
+                    AccessibilityViewModel.equipmentMaintenanceTask.value = false
+                }.show()
+        }else{
+            if (AccessibilityViewModel.settingTask.value != true) {/*清除所有准备要进行的消息*/
+                AccessibilityViewModel.settingTask.value = true
+            }
+            finish()
         }
+
     }
 }

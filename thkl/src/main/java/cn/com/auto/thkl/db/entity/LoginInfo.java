@@ -9,8 +9,8 @@ import org.greenrobot.greendao.annotation.Id;
 public class LoginInfo {
     @Id(autoincrement = true)
     private Long id;
-    private String account;
-    private Long time;
+    private String account;/* login name*/
+    private Long time; /*update time*/
 
     @Generated(hash = 1399828035)
     public LoginInfo(Long id, String account, Long time) {

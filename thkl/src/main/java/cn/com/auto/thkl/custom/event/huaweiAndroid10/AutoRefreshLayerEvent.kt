@@ -1,9 +1,12 @@
 package cn.com.auto.thkl.custom.event.huaweiAndroid10
 
 import android.accessibilityservice.AccessibilityService
+import android.content.Intent
 import android.view.accessibility.AccessibilityEvent
 import androidx.core.view.accessibility.AccessibilityNodeInfoCompat
 import cn.com.auto.thkl.App
+import cn.com.auto.thkl.activity.LoginActivity
+import cn.com.auto.thkl.activity.VerificationActivity
 import cn.com.auto.thkl.custom.event.base.Event
 import cn.com.auto.thkl.custom.event.base.EventAction
 import cn.com.auto.thkl.custom.event.base.EventController
@@ -25,16 +28,11 @@ class AutoRefreshLayerEvent(override val task: TaskProperty) :
 
             2 -> {
                 runEvent {
-                    runTime++
-                    val targetList =
-                        App.service.rootInActiveWindow!!.findAccessibilityNodeInfosByText("阅阅赚")
-                    if (targetList.isEmpty()) {
-                        return@runEvent
-                    }
-                    runTime++
-                    val target = targetList[0]
-                    target?.performAction(AccessibilityNodeInfoCompat.ACTION_CLICK)
-                    EventController.INSTANCE.removeEvent(this, MsgType.SUCCESS)
+                    val intent = Intent()
+                    intent.setClass(App.service, LoginActivity::class.java)
+                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    App.service.startActivity(intent)
+                    EventController.INSTANCE.removeEvent(this, MsgType.SUCCESS)/*开启下一个任务*/
                 }
 
             }

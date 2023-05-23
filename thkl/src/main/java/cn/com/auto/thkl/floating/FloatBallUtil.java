@@ -17,11 +17,13 @@ public class FloatBallUtil {
 
     public static WindowManager.LayoutParams getLayoutParams(Context context, boolean listenBackEvent) {
         WindowManager.LayoutParams layoutParams = new WindowManager.LayoutParams();
-
-        layoutParams.flags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE | WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH
-                | WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS | WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL;
-        if (listenBackEvent) {
-            layoutParams.flags = layoutParams.flags & ~WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE;
+        if (listenBackEvent){
+            layoutParams.flags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
+                    | WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS | WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL;
+        }else {
+            layoutParams.flags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
+                    | WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS | WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL
+                    | WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE;
         }
         if (context == null || !(context instanceof Activity)) {
             final int sdkInt = Build.VERSION.SDK_INT;
@@ -53,7 +55,9 @@ public class FloatBallUtil {
         layoutParams.width = 0;
         layoutParams.height = 0;
         layoutParams.flags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
-                | WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL;
+                | WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS
+                | WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL|
+        WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE;
         layoutParams.gravity = Gravity.LEFT | Gravity.TOP;
         if (context == null || !(context instanceof Activity)) {
             final int sdkInt = Build.VERSION.SDK_INT;

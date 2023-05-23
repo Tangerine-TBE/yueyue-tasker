@@ -73,7 +73,7 @@ class AutoRequestPermissionEvent(
             3 -> {
                 if (event!!.className == "com.android.packageinstaller.permission.ui.ManagePermissionsActivity" && event.packageName == "com.android.permissioncontroller") {
                     runEvent{
-                        val windowInfo = service!!.rootInActiveWindow
+                        val windowInfo = service.rootInActiveWindow
                         val nodeInfoList =
                             windowInfo.findAccessibilityNodeInfosByViewId("android:id/title")
                         currentStep++

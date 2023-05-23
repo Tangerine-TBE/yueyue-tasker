@@ -35,12 +35,12 @@ abstract class EventAction(eventName: String, eventType: Set<Int>) : Event {
     fun runEvent(runnable: Runnable) {
         runTime++
         App.handler.removeCallbacksAndMessages(null)
-        App.handler.postDelayed(runnable, 1500)
+        App.handler.postDelayed(runnable, 500)
     }
     fun runEvent(runnable: Runnable,delay:Float){
         runTime++
         App.handler.removeCallbacksAndMessages(null)
-        App.handler.postDelayed(runnable, (delay * 1500).toLong())
+        App.handler.postDelayed(runnable, (delay * 1000).toLong())
     }
 
     override fun execute(event: AccessibilityEvent?) {

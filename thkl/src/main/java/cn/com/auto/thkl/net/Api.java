@@ -5,6 +5,7 @@ import android.util.Log;
 import com.jakewharton.retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory;
 
 
+import cn.com.auto.thkl.BuildConfig;
 import cn.com.auto.thkl.Constant;
 
 import java.util.concurrent.TimeUnit;
@@ -37,21 +38,12 @@ public class Api {
         HttpLoggingInterceptor httpLoggingInterceptor = new HttpLoggingInterceptor(new HttpLoggingInterceptor.Logger() {
             @Override
             public void log(String message) {
+                L.e(message);
             }
-        })
-                .setLevel(HttpLoggingInterceptor.Level.BODY);
-        OkHttpClient okHttpClient = new OkHttpClient.Builder()
-                .connectTimeout(10, TimeUnit.SECONDS)
-                .addInterceptor(httpLoggingInterceptor)
-                .readTimeout(20,TimeUnit.SECONDS)
-                .writeTimeout(20,TimeUnit.SECONDS)
-                .build();
-        Retrofit retrofit = new Retrofit.Builder()
-                .client(okHttpClient)
-                .baseUrl(Constant.BASE_URL)
-                .addConverterFactory(GsonConverterFactory.create())//请求的结果转为实体类
-                .addCallAdapterFactory(RxJava2CallAdapterFactory.create())
-                .build();
+        }).setLevel(HttpLoggingInterceptor.Level.BODY);
+        OkHttpClient okHttpClient = new OkHttpClient.Builder().connectTimeout(10, TimeUnit.SECONDS).addInterceptor(httpLoggingInterceptor).readTimeout(20, TimeUnit.SECONDS).writeTimeout(20, TimeUnit.SECONDS).build();
+        Retrofit retrofit = new Retrofit.Builder().client(okHttpClient).baseUrl(BuildConfig.SYSTEM_VALUE.equals("debug") ? Constant.BASE_URL_DEBUG : Constant.BASE_URL_RELEASE).addConverterFactory(GsonConverterFactory.create())//请求的结果转为实体类
+                .addCallAdapterFactory(RxJava2CallAdapterFactory.create()).build();
 
         apiService = retrofit.create(ApiService.class);
     }

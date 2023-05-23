@@ -228,7 +228,7 @@ class AutoStartSetEvent(override val task: TaskProperty) :
                                     service = service,
                                 )
                             }
-                            runEvent {
+                            App.handler.postDelayed( {
                                 if (!switchBackStart.isChecked) {
                                     switchBackStart.getBoundsInScreen(rect)
                                     clickPoint(
@@ -237,7 +237,7 @@ class AutoStartSetEvent(override val task: TaskProperty) :
                                         service = service,
                                     )
                                 }
-                                runEvent {
+                                App.handler.postDelayed( {
                                     btnConfirm.getBoundsInScreen(rect)
                                     currentStep++
                                     clickPoint(
@@ -245,8 +245,8 @@ class AutoStartSetEvent(override val task: TaskProperty) :
                                         ((rect.bottom + rect.top) / 2).toFloat(),
                                         service = service,
                                     )
-                                }
-                            }
+                                },1500)
+                            },1000)
                         }
                     }
                 }

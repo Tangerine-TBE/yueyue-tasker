@@ -7,6 +7,7 @@ import android.os.Build
 import android.view.accessibility.AccessibilityEvent
 import androidx.annotation.RequiresApi
 import cn.com.auto.thkl.App
+import cn.com.auto.thkl.activity.LoginActivity
 import cn.com.auto.thkl.custom.event.base.EventAction
 import cn.com.auto.thkl.custom.event.base.EventController
 import cn.com.auto.thkl.custom.event.base.MsgType
@@ -15,7 +16,7 @@ import cn.com.auto.thkl.utils.L
 
 @RequiresApi(Build.VERSION_CODES.P)
 class AutoCaptureEvent(
-    private val activity: Activity,
+    private val activity: LoginActivity,
     private val mediaProjectionManager: MediaProjectionManager,
     override val task: TaskProperty
 ) :

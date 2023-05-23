@@ -52,7 +52,8 @@ interface ApiService {
         @Field("electricity") electricity: Int,
         @Field("queryExecute") queryExecute: Boolean,
         @Field("signal") signal: Int,
-        @Field("state") state: Boolean
+        @Field("state") state: Boolean,
+        @Field("stateExtra") stateExtra:Boolean
     ): BaseRsp
 
     @Streaming

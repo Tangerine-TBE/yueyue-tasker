@@ -26,7 +26,7 @@ class AutoCheckWXLoginEvent(override val task: TaskProperty) :
                 val intent = App.service.packageManager.getLaunchIntentForPackage(packAgeName)
                 if (intent == null) {
                     EventController.INSTANCE.removeEvent(this, MsgType.SUCCESS)/*开启下一个任务*/
-                    AccessibilityViewModel.report.postValue("没有安装微信!")
+//                    AccessibilityViewModel.report.postValue("没有安装微信!")
                     return
                 }
                 val resolveInfo = App.service.packageManager.resolveActivity(intent!!, 0)
@@ -44,7 +44,7 @@ class AutoCheckWXLoginEvent(override val task: TaskProperty) :
                         val rootNodeInfo = App.service.rootInActiveWindow
                         val targetList = rootNodeInfo?.findAccessibilityNodeInfosByText("通讯录")
                         if (targetList!!.isEmpty()) {/*没有登录*/
-                            AccessibilityViewModel.report.value = "微信没有登录"
+//                            AccessibilityViewModel.report.value = "微信没有登录"
                         }
                         EventController.INSTANCE.removeEvent(this, MsgType.SUCCESS)/*开启下一个任务*/
 

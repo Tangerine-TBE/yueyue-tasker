@@ -19,6 +19,7 @@ import cn.com.auto.thkl.autojs.key.GlobalKeyObserver
 import cn.com.auto.thkl.db.DaoTool
 import cn.com.auto.thkl.receiver.DynamicBroadcastReceivers
 import cn.com.auto.thkl.service.AccessibilityService
+import cn.com.auto.thkl.utils.L
 import cn.com.auto.thkl.utils.SP
 import cn.com.auto.thkl.weight.ThemeColorManagerCompat
 import com.blankj.utilcode.util.DeviceUtils
@@ -175,7 +176,17 @@ class App : MultiDexApplication(), CoroutineScope by CoroutineScope(Dispatchers.
         public lateinit var handler: Handler
         val app: App
             get() = instance.get()!!
-        val EVENT_PACK_NAME = "huaweiAndroid10"
+        val EVENT_PACK_NAME: String
+            get() {
+                val brand = DeviceUtils.getManufacturer()//厂商
+                val versionName = DeviceUtils.getSDKVersionName()//系统版本号
+                L.e("${brand}+${versionName}")
+                if (brand == "HUAWEI" && versionName == "10") {
+                    return "huaweiAndroid10"
+                } else {
+                    return ""
+                }
+            }
         val OFFSET_VALUE: Float
             /*2160   2560*//*2560 -2160 = 400*//*2160 == 90*//*2560 == 90+n*//*90/2160 == n/2560*//*n == 107*/
             get() = (ScreenUtils.getScreenHeight() * 80 / 2160).toFloat()

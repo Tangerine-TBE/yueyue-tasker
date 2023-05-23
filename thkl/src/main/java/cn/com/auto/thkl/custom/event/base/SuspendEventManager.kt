@@ -1,5 +1,6 @@
 package cn.com.auto.thkl.custom.event.base
 
+import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.media.projection.MediaProjectionManager
@@ -25,10 +26,10 @@ object SuspendEventManager {
         return constructor.newInstance(scope) as Event
 
     }
-    fun getEvent(clazzName: String,context: Context,mediaProjectionManager:MediaProjectionManager,scope: TaskProperty):Event{
+    fun getEvent(clazzName: String, activity: LoginActivity, mediaProjectionManager:MediaProjectionManager, scope: TaskProperty):Event{
         val clazz = Class.forName("$CLAZZ_PARENT_PACK${App.EVENT_PACK_NAME}.${clazzName}")
-        val constructor = clazz.getConstructor(context::class.java,mediaProjectionManager::class.java,scope::class.java,)
-        return constructor.newInstance(scope) as Event
+        val constructor = clazz.getConstructor(activity::class.java,mediaProjectionManager::class.java,scope::class.java,)
+        return constructor.newInstance(activity,mediaProjectionManager,scope) as Event
     }
 
     suspend fun suspendAutoShutDownEvent(scope: TaskProperty) {

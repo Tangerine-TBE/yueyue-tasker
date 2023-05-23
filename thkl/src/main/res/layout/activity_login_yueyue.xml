@@ -133,17 +133,4 @@
         android:layout_width="344.42dp"
         android:layout_height="45dp"
         />
-
-    <Button
-        android:id="@+id/btn_test"
-        app:layout_constraintTop_toBottomOf="@id/btn_login"
-        android:layout_marginTop="46dp"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        android:background="@drawable/shape_bg_button"
-        android:text="测试"
-        android:textColor="@android:color/white"
-        android:layout_width="344.42dp"
-        android:layout_height="45dp"
-        />
 </androidx.constraintlayout.widget.ConstraintLayout>

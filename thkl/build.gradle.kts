@@ -93,11 +93,11 @@ android {
 
     flavorDimensions.add("channel")
     productFlavors {
-        create("huawei_android_10_") {
-            buildConfigField("String", "SYSTEM_VALUE", "\"HuaWeiAndroid10\"")
+        create("open_url") {
+            buildConfigField("String", "SYSTEM_VALUE", "\"release\"")
         }
-        create("huawei_android_9_") {
-            buildConfigField("String", "SYSTEM_VALUE", "\"HuaWeiAndroid9\"")
+        create("inner_url") {
+            buildConfigField("String", "SYSTEM_VALUE", "\"debug\"")
         }
     }
     android.applicationVariants.all {
@@ -105,13 +105,13 @@ android {
             if (this is com.android.build.gradle.internal.api.ApkVariantOutputImpl) {
                 if (this.name.contains("arm64-v8a")) {
                     this.outputFileName =
-                        "yueyue_V${versionName}_v8a.apk"
+                        "yueyue_${flavorName}_V${versionName}_v8a.apk"
                 } else if (this.name.contains("armeabi-v7a")) {
                     this.outputFileName =
-                        "yueyue_V${versionName}_v7a.apk"
+                        "yueyue_${flavorName}_V${versionName}_v7a.apk"
                 } else {
                     this.outputFileName =
-                        "yueyue_V${versionName}_null.apk"
+                        "yueyue_${flavorName}_V${versionName}_null.apk"
                 }
             }
         }
@@ -138,7 +138,7 @@ android {
         )
     }
     greendao {
-        this.schemaVersion = 3
+        this.schemaVersion = 4
         this.daoPackage = "cn.com.auto.thkl.db"
     }
 

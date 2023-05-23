@@ -18,6 +18,10 @@ public class SP {
     public static void putString(String key, String value) {
         sharedPreferences.edit().putString(key, StringUtils.ofString(value)).apply();
     }
+    public static void putStringN(String key,String value){
+        sharedPreferences.edit().putString(key,value).apply();
+
+    }
     public static boolean getBoolean(String key){
         return sharedPreferences.getBoolean(key,false);
     }
