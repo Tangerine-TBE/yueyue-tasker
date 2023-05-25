@@ -1,4 +1,4 @@
-package cn.com.auto.thkl.custom.event.huaweiAndroid10
+package cn.com.auto.thkl.custom.event.xiaomiAndroid14
 
 import android.accessibilityservice.AccessibilityService
 import android.content.ComponentName

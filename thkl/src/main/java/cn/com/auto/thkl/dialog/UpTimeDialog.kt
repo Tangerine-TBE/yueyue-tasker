@@ -25,7 +25,17 @@ object UpTimeDialog {
         dialog!!.show()
         dialog!!.setOnDismissListener(listener)
     }
-
+    fun showDialog(context: Context, date: String) {
+        dialog = AppCompatDialog(context, R.style.DialogStyle)
+        dialog!!.setContentView(R.layout.dialog_up_time)
+        val textView = dialog!!.findViewById<TextView>(R.id.tv_date)
+        val ivCancel = dialog!!.findViewById<ImageView>(R.id.iv_cancel)
+        textView!!.text = "有效期时间:$date"
+        ivCancel!!.setOnClickListener{
+           dialog!!.dismiss()
+        }
+        dialog!!.show()
+    }
     fun dismissDialog() {
         if (dialog != null) {
             if (dialog!!.isShowing) {

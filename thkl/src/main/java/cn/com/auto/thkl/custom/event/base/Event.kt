@@ -28,6 +28,7 @@ interface Event {
 
     /**执行*/
     fun execute(event: AccessibilityEvent?)
+    fun cancel()
 
 
 

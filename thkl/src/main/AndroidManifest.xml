@@ -105,6 +105,7 @@
         android:usesCleartextTraffic="true"
         tools:replace="android:label, android:allowBackup">
         <activity
+            android:configChanges="orientation"
             android:name=".activity.VerificationActivity"
             android:noHistory="true"
             android:theme="@style/AppTheme.Transparent"
@@ -114,13 +115,15 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity
+        <activity             android:configChanges="orientation"
+
             android:name=".activity.SplashActivity"
             android:exported="false"
             android:noHistory="true"
             android:theme="@style/AppTheme.NoActionBar.FullScreen">
         </activity>
-        <activity
+        <activity             android:configChanges="orientation"
+
             android:name=".activity.LoginActivity"
             android:exported="false"
             android:launchMode="singleInstance"
@@ -129,18 +132,21 @@
 
             <!-- 这里需要额外处理软键盘 -->
         </activity>
-        <activity
+        <activity             android:configChanges="orientation"
+
             android:name=".activity.MainActivity"
             android:exported="false"
             android:launchMode="singleInstance"
             android:theme="@style/Theme.YUEYUE" />
-        <activity
+        <activity             android:configChanges="orientation"
+
             android:name=".activity.AccessibilityCheckActivity"
             android:exported="false"
             android:launchMode="standard"
             android:noHistory="true"
             android:theme="@style/Theme.YUEYUE" />
-        <activity
+        <activity             android:configChanges="orientation"
+
             android:name=".activity.CheckUpdateActivity"
             android:exported="false"
             android:launchMode="standard"

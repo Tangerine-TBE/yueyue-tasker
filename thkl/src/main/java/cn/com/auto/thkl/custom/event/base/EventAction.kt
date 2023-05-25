@@ -31,23 +31,44 @@ abstract class EventAction(eventName: String, eventType: Set<Int>) : Event {
         this.eventCompleted = eventCompleted
     }
 
+    override fun cancel() {
+        App.handler.removeCallbacksAndMessages(null)
+    }
+
 
     fun runEvent(runnable: Runnable) {
-        runTime++
-        App.handler.removeCallbacksAndMessages(null)
-        App.handler.postDelayed(runnable, 500)
+        if (task.job != null){
+            if (!task.job.isCancelled) {
+                runTime++
+                App.handler.removeCallbacksAndMessages(null)
+                App.handler.postDelayed(runnable, 500)
+            }
+        }else{
+            runTime++
+            App.handler.removeCallbacksAndMessages(null)
+            App.handler.postDelayed(runnable, 500)
+        }
+
     }
-    fun runEvent(runnable: Runnable,delay:Float){
-        runTime++
-        App.handler.removeCallbacksAndMessages(null)
-        App.handler.postDelayed(runnable, (delay * 1000).toLong())
+
+    fun runEvent(runnable: Runnable, delay: Float) {
+        if (task.job != null){
+            if (!task.job.isCancelled) {
+                runTime++
+                App.handler.removeCallbacksAndMessages(null)
+                App.handler.postDelayed(runnable, (delay * 1000).toLong())
+            }
+        }else{
+            runTime++
+            App.handler.removeCallbacksAndMessages(null)
+            App.handler.postDelayed(runnable, (delay * 1000).toLong())
+        }
+
     }
 
     override fun execute(event: AccessibilityEvent?) {
-            start(service, event)
+        start(service, event)
     }
-
-
 
 
     abstract fun start(service: AccessibilityService, event: AccessibilityEvent?)
@@ -55,7 +76,7 @@ abstract class EventAction(eventName: String, eventType: Set<Int>) : Event {
         runTime++
         App.handler.postDelayed({
             service.performGlobalAction(AccessibilityService.GLOBAL_ACTION_BACK)
-        },1500)
+        }, 1500)
     }
 
 
@@ -63,6 +84,7 @@ abstract class EventAction(eventName: String, eventType: Set<Int>) : Event {
     var y = 0f//起点y
     var perMoveY = 0f //上下每次滑动的距离
     var perMoveX = 0f //左右每次滑动的距离
+
     @SuppressLint("NewApi")
     fun scrollDownPoint(
         accessibilityNodeInfo: AccessibilityNodeInfo?,
@@ -75,10 +97,10 @@ abstract class EventAction(eventName: String, eventType: Set<Int>) : Event {
         }
         val builder = GestureDescription.Builder()
         val path = Path()
-        if (accessibilityNodeInfo == null){
+        if (accessibilityNodeInfo == null) {
             return
         }
-        if (accessibilityNodeInfo.parent == null){
+        if (accessibilityNodeInfo.parent == null) {
             return
         }
         accessibilityNodeInfo.parent.getBoundsInScreen(rect)
@@ -92,8 +114,9 @@ abstract class EventAction(eventName: String, eventType: Set<Int>) : Event {
         val gesture = builder.build()
         isWorking = true
         service.dispatchGesture(
-            gesture, @RequiresApi(Build.VERSION_CODES.N)
-            object : AccessibilityService.GestureResultCallback() {
+            gesture,
+            @RequiresApi(Build.VERSION_CODES.N) object :
+                AccessibilityService.GestureResultCallback() {
                 override fun onCompleted(gestureDescription: GestureDescription?) {
                     L.e("滑动完成")
                     isWorking = false
@@ -106,20 +129,21 @@ abstract class EventAction(eventName: String, eventType: Set<Int>) : Event {
                     L.e("滑动失败")
                     isWorking = false
                 }
-            }, null
+            },
+            null
         )
 
     }
 
     @RequiresApi(Build.VERSION_CODES.N)
-    fun scrollRightPoint(accessibilityNodeInfo: AccessibilityNodeInfo?){
+    fun scrollRightPoint(accessibilityNodeInfo: AccessibilityNodeInfo?) {
         runTime++
-        if (isWorking){
+        if (isWorking) {
             return
         }
         val builder = GestureDescription.Builder()
         val path = Path()
-        if (accessibilityNodeInfo == null){
+        if (accessibilityNodeInfo == null) {
             return
         }
         accessibilityNodeInfo.getBoundsInScreen(rect)
@@ -132,8 +156,9 @@ abstract class EventAction(eventName: String, eventType: Set<Int>) : Event {
         val gesture = builder.build()
         isWorking = true
         service.dispatchGesture(
-            gesture, @RequiresApi(Build.VERSION_CODES.N)
-            object : AccessibilityService.GestureResultCallback() {
+            gesture,
+            @RequiresApi(Build.VERSION_CODES.N) object :
+                AccessibilityService.GestureResultCallback() {
                 override fun onCompleted(gestureDescription: GestureDescription?) {
                     L.e("滑动完成")
                     isWorking = false
@@ -146,14 +171,17 @@ abstract class EventAction(eventName: String, eventType: Set<Int>) : Event {
                     L.e("滑动失败")
                     isWorking = false
                 }
-            }, null
+            },
+            null
         )
     }
 
     @RequiresApi(Build.VERSION_CODES.N)
-    fun scrollUpPoint(accessibilityNodeInfo: AccessibilityNodeInfo,
-                      service: AccessibilityService,
-                      event: AccessibilityEvent){
+    fun scrollUpPoint(
+        accessibilityNodeInfo: AccessibilityNodeInfo,
+        service: AccessibilityService,
+        event: AccessibilityEvent
+    ) {
         runTime++
         if (isWorking) {
             return
@@ -171,8 +199,9 @@ abstract class EventAction(eventName: String, eventType: Set<Int>) : Event {
         val gesture = builder.build()
         isWorking = true
         service.dispatchGesture(
-            gesture, @RequiresApi(Build.VERSION_CODES.N)
-            object : AccessibilityService.GestureResultCallback() {
+            gesture,
+            @RequiresApi(Build.VERSION_CODES.N) object :
+                AccessibilityService.GestureResultCallback() {
                 override fun onCompleted(gestureDescription: GestureDescription?) {
                     L.e("滑动完成")
                     isWorking = false
@@ -185,11 +214,13 @@ abstract class EventAction(eventName: String, eventType: Set<Int>) : Event {
                     L.e("滑动失败")
                     isWorking = false
                 }
-            }, null
+            },
+            null
         )
 
 
     }
+
     @SuppressLint("NewApi")
     fun clickPoint(x: Float, y: Float, service: AccessibilityService) {
         runTime++
@@ -204,8 +235,9 @@ abstract class EventAction(eventName: String, eventType: Set<Int>) : Event {
         val gesture = builder.build()
         isWorking = true
         service.dispatchGesture(
-            gesture, @RequiresApi(Build.VERSION_CODES.N)
-            object : AccessibilityService.GestureResultCallback() {
+            gesture,
+            @RequiresApi(Build.VERSION_CODES.N) object :
+                AccessibilityService.GestureResultCallback() {
                 override fun onCompleted(gestureDescription: GestureDescription?) {
                     super.onCompleted(gestureDescription)
                     L.e("点击完成")
@@ -218,13 +250,14 @@ abstract class EventAction(eventName: String, eventType: Set<Int>) : Event {
                     L.e("点击失败")/*出现失败，可能是第三方正在占用，重新进行一次*/
                     isWorking = false
                 }
-            }, null
+            },
+            null
         )
 
     }
 
     @RequiresApi(Build.VERSION_CODES.N)
-    fun clickPoint( service: AccessibilityService){
+    fun clickPoint(service: AccessibilityService) {
         runTime++
         if (isWorking) {
             return
@@ -239,8 +272,9 @@ abstract class EventAction(eventName: String, eventType: Set<Int>) : Event {
         val gesture = builder.build()
         isWorking = true
         service.dispatchGesture(
-            gesture, @RequiresApi(Build.VERSION_CODES.N)
-            object : AccessibilityService.GestureResultCallback() {
+            gesture,
+            @RequiresApi(Build.VERSION_CODES.N) object :
+                AccessibilityService.GestureResultCallback() {
                 override fun onCompleted(gestureDescription: GestureDescription?) {
                     super.onCompleted(gestureDescription)
                     L.e("点击完成")
@@ -253,7 +287,8 @@ abstract class EventAction(eventName: String, eventType: Set<Int>) : Event {
                     L.e("点击失败")/*出现失败，可能是第三方正在占用，重新进行一次*/
                     isWorking = false
                 }
-            }, null
+            },
+            null
         )
     }
 

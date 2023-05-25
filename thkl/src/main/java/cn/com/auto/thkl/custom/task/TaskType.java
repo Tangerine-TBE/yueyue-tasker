@@ -12,6 +12,8 @@ public enum TaskType {
     AUTO_EXECUTE_TASK,/*自动执行脚本任务*/
     AUTO_CAPTURE_TASK, /*自动申请相机*/
     AUTO_OVER_LAYER_TASK, /*自动申请悬浮框*/
-    AUTO_STOP_TASK
+    AUTO_STOP_TASK,
+    AUTO_FIRST_MAINTENANCE_TASK, /*自动部署*/
 
-}
+
+    }

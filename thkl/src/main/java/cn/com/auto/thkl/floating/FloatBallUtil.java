@@ -2,6 +2,7 @@ package cn.com.auto.thkl.floating;
 
 import android.app.Activity;
 import android.content.Context;
+import android.content.pm.ActivityInfo;
 import android.graphics.PixelFormat;
 import android.os.Build;
 import android.view.Gravity;
@@ -47,6 +48,7 @@ public class FloatBallUtil {
         layoutParams.gravity = Gravity.TOP | Gravity.LEFT;
         layoutParams.width = WindowManager.LayoutParams.WRAP_CONTENT;
         layoutParams.height = WindowManager.LayoutParams.WRAP_CONTENT;
+        layoutParams.screenOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT;
         return layoutParams;
     }
 

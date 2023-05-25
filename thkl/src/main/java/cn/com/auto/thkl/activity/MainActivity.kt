@@ -99,22 +99,22 @@ class MainActivity : BaseActivity(), DialogInterface.OnDismissListener {
                 onDismiss(null)
             }
             AccessibilityViewModel.upTimeTips.value = true
-        }
-        /*当*/
+        }/*当*/
         val intent = intent
-       val bundle =  intent.extras
-       val scriptApp =  bundle?.getString(Constant.SCRIPT_APP)
-        if (!TextUtils.isEmpty(scriptApp)){
-            MaterialDialog.Builder(this).cancelable(false).canceledOnTouchOutside(false).title("自动部署完成").contentColor(Color.parseColor("#666666"))
+        val bundle = intent.extras
+        val scriptApp = bundle?.getString(Constant.SCRIPT_APP)
+        if (!TextUtils.isEmpty(scriptApp)) {
+            SP.putBoolean(Constant.FIRST_INSTALL, true)
+            MaterialDialog.Builder(this).cancelable(false).canceledOnTouchOutside(false)
+                .title("自动部署完成").contentColor(Color.parseColor("#666666"))
                 .content("首次使用建议先退出，手动注册登录各任务APP，并完成各APP首次提现后，再运行[${AppUtils.getAppName()}]进行自动做任务")
                 .negativeText("退出${AppUtils.getAppName()}")
                 .negativeColor(Color.parseColor("#FF120E")).positiveText("开始任务")
                 .positiveColor(Color.parseColor("#09BC21")).onNegative { _, _ ->
                     AccessibilityViewModel.exitTask.value = true
                 }.onPositive { _, _ ->
-                    finish()
                     AccessibilityViewModel.settingTask.value = true
-                }.show()
+                }.dismissListener { finish() }.show()
         }
     }
 
@@ -123,6 +123,7 @@ class MainActivity : BaseActivity(), DialogInterface.OnDismissListener {
         btn_logout.setOnClickListener {
             AccessibilityViewModel.logout.value = this@MainActivity
             AccessibilityViewModel.upTimeTips.value = false
+            AccessibilityViewModel.looperStateTask.value = false
         }
         btn_restart.setOnClickListener {
             AccessibilityViewModel.restartTask.value = true
@@ -141,41 +142,54 @@ class MainActivity : BaseActivity(), DialogInterface.OnDismissListener {
         val bundle = intent?.extras
         val uptime = bundle?.getString(Constant.UPTIME)
         if (!TextUtils.isEmpty(uptime)) {
-            AccessibilityViewModel.logout.postValue(this)
+            /*弹出提示框*/
+            UpTimeDialog.showDialog(this@MainActivity, SP.getString(Constant.EXPIRY_TIME))
+        }
+        val scriptApp = bundle?.getString(Constant.SCRIPT_APP)
+        if (!TextUtils.isEmpty(scriptApp)) {
+            SP.putBoolean(Constant.FIRST_INSTALL, true)
+            MaterialDialog.Builder(this).cancelable(false).canceledOnTouchOutside(false)
+                .title("自动部署完成").contentColor(Color.parseColor("#666666"))
+                .content("首次使用建议先退出，手动注册登录各任务APP，并完成各APP首次提现后，再运行[${AppUtils.getAppName()}]进行自动做任务")
+                .negativeText("退出${AppUtils.getAppName()}")
+                .negativeColor(Color.parseColor("#FF120E")).positiveText("开始任务")
+                .positiveColor(Color.parseColor("#09BC21")).onNegative { _, _ ->
+                    AccessibilityViewModel.exitTask.value = true
+                }.onPositive { _, _ ->
+                    AccessibilityViewModel.settingTask.value = true
+                }.dismissListener { finish() }.show()
         }
     }
 
     override fun onDismiss(p0: DialogInterface?) {
         /**登录成功后*/
-        /**是否进行自动维护部署*/
-        /*开始心跳*/
+        /**是否进行自动维护部署*//*开始心跳*/
         if (AccessibilityViewModel.heartBeatTask.value != true) {
             AccessibilityViewModel.heartBeatTask.value = true
-        }
-        /*开始计时*/
-        if (AccessibilityViewModel.onDate.value != true) {
-            AccessibilityViewModel.onDate.value = true
+        }/*开始计时*/
+        if (AccessibilityViewModel.looperStateTask.value != true) {
+            AccessibilityViewModel.looperStateTask.value = true
         }
         if (AccessibilityViewModel.normalStartService.value != true) {
             AccessibilityViewModel.normalStartService.value = true
         }
-        if (!DaoTool.findStatusWithLogin(SP.getString(Constant.LOGIN_NAME))) {
-            MaterialDialog.Builder(this).title("欢迎使用阅阅乐")
-                .contentColor(Color.parseColor("#666666"))
+        if (!SP.getBoolean(Constant.FIRST_INSTALL)) {
+            MaterialDialog.Builder(this).title("欢迎使用阅阅赚")
+                .contentColor(Color.parseColor("#666666")).canceledOnTouchOutside(false).cancelable(false)
                 .content("你的手机机型[${DeviceUtils.getManufacturer()}:${DeviceUtils.getModel()}]未认证,可尝试使用品牌[5G]默认参数进行自动部署,收益可能受轻微影响。部署时间可能较长(包括系统设置和下载安装任务APP),请耐心等待。")
                 .negativeText("手动部署").negativeColor(Color.parseColor("#FF120E"))
                 .neutralText("已完成部署").neutralColor(Color.parseColor("#5C58BF"))
                 .positiveText("自动部署").positiveColor(Color.parseColor("#09BC21"))
                 .onNegative { _, _ ->
                     /*手动部署*/
-                        AccessibilityViewModel.exitTask.value = true
+                    AccessibilityViewModel.exitTask.value = true
                 }.onNeutral { _, _ ->
                     /*已完成部署*/
                     MaterialDialog.Builder(this).title("欢迎使用阅阅赚")
                         .contentColor(Color.parseColor("#666666"))
-                        .content("提示:您已手动完成部署，立即开始代你做任务")
+                        .content("提示:您已手动完成部署，立即开始代你做任务").canceledOnTouchOutside(false).cancelable(false)
                         .positiveText("开始任务").positiveColor(Color.parseColor("#09BC21"))
-                        .onPositive{_,_->
+                        .onPositive { _, _ ->
                             if (AccessibilityViewModel.settingTask.value != true) {/*清除所有准备要进行的消息*/
                                 AccessibilityViewModel.settingTask.value = true
                             }
@@ -184,7 +198,7 @@ class MainActivity : BaseActivity(), DialogInterface.OnDismissListener {
                     /*自动部署*/
                     AccessibilityViewModel.equipmentMaintenanceTask.value = false
                 }.show()
-        }else{
+        } else {
             if (AccessibilityViewModel.settingTask.value != true) {/*清除所有准备要进行的消息*/
                 AccessibilityViewModel.settingTask.value = true
             }

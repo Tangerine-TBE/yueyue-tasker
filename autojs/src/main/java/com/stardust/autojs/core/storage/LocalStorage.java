@@ -13,7 +13,6 @@ public class LocalStorage {
     private final SharedPreferences mSharedPreferences;
 
     public LocalStorage(Context context) {
-        Log.e("aa", context.getPackageName());
         mSharedPreferences = context.getSharedPreferences(context.getPackageName()+"_preferences", Context.MODE_PRIVATE);
     }
 
@@ -47,7 +46,6 @@ public class LocalStorage {
     }
 
     public String getString(String key, String defaultValue) {
-        Log.e("localStorage",mSharedPreferences.getString(key, defaultValue));
         return mSharedPreferences.getString(key, defaultValue);
     }
 

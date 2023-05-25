@@ -21,6 +21,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.core.content.ContextCompat;
+import cn.com.auto.thkl.App;
 import cn.com.auto.thkl.autojs.key.GlobalKeyObserver;
 import cn.com.auto.thkl.floating.FloatBallManager;
 import cn.com.auto.thkl.floating.FloatBallUtil;
@@ -69,18 +70,16 @@ public class FloatBall extends FrameLayout implements ICarrier, GlobalKeyObserve
         imageView = new ImageView(context);
         textView = new RoundTextView(context);
         initState();
-        FrameLayout.LayoutParams layoutParams = new FrameLayout.LayoutParams(mSize-35, mSize-35);
+        FrameLayout.LayoutParams layoutParams = new FrameLayout.LayoutParams(mSize - 35, mSize - 35);
         layoutParams.gravity = Gravity.CENTER;
         addView(textView, layoutParams);
-        addView(imageView, new ViewGroup.LayoutParams(mSize,mSize));
+        addView(imageView, new ViewGroup.LayoutParams(mSize, mSize));
         initLayoutParams(context);
         mTouchSlop = ViewConfiguration.get(context).getScaledTouchSlop();
         mRunner = new ScrollRunner(this);
         GlobalKeyObserver.getSingleton().addVolumeDownListener(this);
         mVelocity = new MotionVelocityUtil(context);
-        animation = new RotateAnimation(360f,   0f,Animation.RELATIVE_TO_SELF,
-                0.5f,Animation.RELATIVE_TO_SELF,
-                0.5f);
+        animation = new RotateAnimation(360f, 0f, Animation.RELATIVE_TO_SELF, 0.5f, Animation.RELATIVE_TO_SELF, 0.5f);
         animation.setFillAfter(true);  // 设置保持动画最后的状态
         animation.setDuration(10 * 1000);// 设置动画时间
         animation.setRepeatCount(ValueAnimator.INFINITE);
@@ -98,9 +97,13 @@ public class FloatBall extends FrameLayout implements ICarrier, GlobalKeyObserve
         Drawable newIcon = icon.mutate();
         newIcon.setColorFilter(Color.GREEN, PorterDuff.Mode.SRC_ATOP);
         floatBallManager.setState(true);
-        imageView.startAnimation(animation);
+        App.handler.post(new Runnable() {
+            @Override
+            public void run() {
+                imageView.startAnimation(animation);
+            }
+        });
     }
-
     public final void initState() {
         final Drawable icon = mConfig.mIcon;
         mSize = mConfig.mSize;
@@ -110,10 +113,16 @@ public class FloatBall extends FrameLayout implements ICarrier, GlobalKeyObserve
     }
 
     public final void setUnNormalState() {
-        imageView.clearAnimation();
+
         final Drawable icon = mConfig.mIcon;
         mSize = mConfig.mSize;
         Util.setBackground(imageView, icon);
+        App.handler.post(new Runnable() {
+            @Override
+            public void run() {
+                imageView.clearAnimation();
+            }
+        });
         Drawable newIcon = icon.mutate();
         newIcon.setColorFilter(Color.RED, PorterDuff.Mode.SRC_ATOP);
         floatBallManager.setState(false);

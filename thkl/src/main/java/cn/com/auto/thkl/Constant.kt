@@ -47,6 +47,7 @@ object Constant {
     const val UPTIME = "up_time"
     const val EXIT = "exit"
     const val IP = "ip"
+    const val FIRST_INSTALL = "first_install"
 
 
 }

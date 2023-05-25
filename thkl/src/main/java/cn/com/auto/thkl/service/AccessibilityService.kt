@@ -126,7 +126,8 @@ private const val CHANEL_ID = "cn.com.auto.service.AccessibilityService.foregrou
  * 观察现在步伐到下一个步伐是否可以使得观察计数器得到改变，当在规定时间，该步伐并未向下到下一个步伐或向上回滚到上一个步伐等，
  * 观察计数器没有发生变化，则代表该步伐出现超时现象进而得出任务超时。
  * 为什么不是事件超时？因为每个事件的前后并不被最小单位步伐知道，所以从策略上来讲，重置整个任务，使得任务重新执行是最佳方案
- * */ class AccessibilityService : com.stardust.autojs.core.accessibility.AccessibilityService(),
+ * */
+class AccessibilityService : com.stardust.autojs.core.accessibility.AccessibilityService(),
     LifecycleOwner {
     private val mDisposable = mutableListOf<Disposable>()
     private var level: Int = 0
@@ -145,6 +146,7 @@ private const val CHANEL_ID = "cn.com.auto.service.AccessibilityService.foregrou
     private var floatBallManager: FloatBallManager? = null
     private var runtimeDuration: Long = 0
     private var heartBeatJob: Job? = null
+    private var looperDateJob :Job? =null
     private var currentJob: Job? = null
     private var currentType: TaskType? = null
     private var taskType: TaskType? = null
@@ -155,6 +157,7 @@ private const val CHANEL_ID = "cn.com.auto.service.AccessibilityService.foregrou
     private lateinit var imageReader: ImageReader
     private var stateExtra = false
     private var cmdDo = false
+    private var stoping = false
 
     @SuppressLint("WrongConstant")
     override fun onServiceConnected() {
@@ -185,12 +188,12 @@ private const val CHANEL_ID = "cn.com.auto.service.AccessibilityService.foregrou
                 }
                 timer = Timer()
                 timer!!.schedule(object : TimerTask() {
-                    override fun run() {/*脚本执行超时*/
+                    override fun run() {
                         App.app.launch {
                             AccessibilityViewModel.showTopToast.postValue("当前脚本执行时间到")
                             delay(2500)
                             scriptReport("脚本执行成功", 2, appName!!)/*查询下一个任务*/
-                            AccessibilityViewModel.report.postValue("$appName: 执行完毕,本次执行时长:${runtimeDuration}分钟。")/*这里的主动停止要和用户按钮的主动停止做区分*//*停止脚本*/
+//                            AccessibilityViewModel.report.postValue("$appName: 执行完毕,本次执行时长:${runtimeDuration}分钟。")/*这里的主动停止要和用户按钮的主动停止做区分*//*停止脚本*/
                             AutoJs.getInstance().scriptEngineService.stopAll()
                             suspendListenerStop()
                             onScriptStopListener = null
@@ -202,7 +205,7 @@ private const val CHANEL_ID = "cn.com.auto.service.AccessibilityService.foregrou
         }
 
 
-        override fun onSuccess(execution: ScriptExecution?, result: Any?) {/*接收成功信息*/
+        override fun onSuccess(execution: ScriptExecution?, result: Any?) {
             if (AccessibilityViewModel.normalStartService.value == true) {
 
                 App.app.launch {
@@ -212,14 +215,13 @@ private const val CHANEL_ID = "cn.com.auto.service.AccessibilityService.foregrou
                     timer!!.cancel()
                     timer = null
                 }
-                /**脚本执行完毕，继续查询脚本*/
                 App.app.launch {
                     AccessibilityViewModel.queryTask.postValue(1)
                 }
             }
         }
 
-        override fun onException(execution: ScriptExecution?, e: Throwable?) {/*接收错误信息*/
+        override fun onException(execution: ScriptExecution?, e: Throwable?) {
             if (AccessibilityViewModel.normalStartService.value == true) {
 
                 if (timer != null) {
@@ -228,7 +230,7 @@ private const val CHANEL_ID = "cn.com.auto.service.AccessibilityService.foregrou
                 }
                 if (e != null) {
                     val msg = e.toString()
-                    if (msg.contains("com.stardust.autojs.runtime.exception.ScriptInterruptedException")) {/*主动停止 ---- 只要是调用到AutoJs StopALl方法的都会走这里*/
+                    if (msg.contains("com.stardust.autojs.runtime.exception.ScriptInterruptedException")) {
                         App.app.launch {
                             showTopToast("正在暂停任务，请稍后!")
                             delay(2500)
@@ -238,6 +240,10 @@ private const val CHANEL_ID = "cn.com.auto.service.AccessibilityService.foregrou
                                 onScriptStopListener?.onStop("stop")
                             }
                         }
+                    } else if (msg.contains("java.lang.InterruptedException")) {
+                        AccessibilityViewModel.queryTask.postValue(1)
+                    } else if (msg.contains("org.mozilla.javascript.WrappedException")) {
+                        AccessibilityViewModel.queryTask.postValue(1)
                     }
                 }
             }
@@ -245,7 +251,6 @@ private const val CHANEL_ID = "cn.com.auto.service.AccessibilityService.foregrou
     }
 
     private fun scriptReport(result: String, status: Int, title: String) {
-        L.e("title:${title}")
         App.app.launch {
             withContext(Dispatchers.IO) {
                 val jsonObject = JSONObject()
@@ -263,9 +268,7 @@ private const val CHANEL_ID = "cn.com.auto.service.AccessibilityService.foregrou
                         SP.getString(Constant.TOKEN), requestBody
                     )
                 }.onSuccess {
-                    if (it.success) {
-                        showBottomToast("脚本上报成功")
-                    }
+
                 }.onFailure { it.printStackTrace() }
             }
 
@@ -276,22 +279,18 @@ private const val CHANEL_ID = "cn.com.auto.service.AccessibilityService.foregrou
     private var onPauseListener: OnPauseListener? = null
     private var onTaskFinishedListener: OnTaskFinishedListener? = null
 
-    /**释放挂起方法*/
     interface OnPauseListener {
         fun onScriptPause(name: String)
     }
 
-    /**释放挂起方法*/
     interface OnFinishListener {
         fun onFinish(name: String)
     }
 
-    /**释放挂起方法*/
     interface OnScriptStopListener {
         fun onStop(name: String)
     }
 
-    /**释放挂起方法*/
     interface OnTaskFinishedListener {
         fun taskFinish()
     }
@@ -364,7 +363,6 @@ private const val CHANEL_ID = "cn.com.auto.service.AccessibilityService.foregrou
             if (it.success) {
                 val jsonArray = JSONArray.parseArray(JSONArray.toJSONString(it.obj))
                 if (jsonArray.size == 0) {
-                    showBottomToast("无任务存在，下次查询将在10秒后")
                     targetExit = false
                     delay(10000)
                     queryTask(taskType, job)
@@ -446,10 +444,9 @@ private const val CHANEL_ID = "cn.com.auto.service.AccessibilityService.foregrou
     }
 
     private suspend fun equipmentMaintenanceTask(
-        taskType: TaskType, type: String, job: Job
+        taskType: TaskType, job: Job
     ) {
         kotlin.runCatching {
-//            showBottomToast("正在维护")
             floatBallManager?.isCanOpen = false
             Api.getApiService().queryMaintainInfo(SP.getString(Constant.TOKEN))
         }.onFailure {
@@ -464,7 +461,7 @@ private const val CHANEL_ID = "cn.com.auto.service.AccessibilityService.foregrou
                     val installMatcher = mutableListOf<JSONObject>()
                     val gonnaUnInstall = mutableListOf<JSONObject>()
                     for (i in 0 until jsonArray.size) {
-                        val targetObject = jsonArray.getJSONObject(i);
+                        val targetObject = jsonArray.getJSONObject(i)
                         val enable = targetObject.getBoolean("enable")
                         if (enable) {/*需要安装*/
                             gonnaInstall.add(targetObject)
@@ -475,7 +472,7 @@ private const val CHANEL_ID = "cn.com.auto.service.AccessibilityService.foregrou
                     }
                     if (gonnaInstall.isNotEmpty()) {
                         equipmentInstallTask(taskType, gonnaInstall, job)
-                    }/*不在安装列表的应用进行卸载*/
+                    }
                     val uninstallApps = mutableListOf<JSONObject>()
                     uninstallApps.addAll(gonnaUnInstall)
                     val apps: List<PackageInfo> = packageManager.getInstalledPackages(0)
@@ -485,7 +482,6 @@ private const val CHANEL_ID = "cn.com.auto.service.AccessibilityService.foregrou
                             for (remote in installMatcher) {
                                 val remotePkName = remote.getString("uniqueCode")
                                 if (localApp.packageName.equals(remotePkName)) {
-                                    L.e("单个App${remotePkName}")
                                     target = "111"
                                 }
                             }
@@ -498,7 +494,7 @@ private const val CHANEL_ID = "cn.com.auto.service.AccessibilityService.foregrou
                                 }
                             }
                         }
-                    }/*用户不关心的应用进行卸载*/
+                    }
                     if (uninstallApps.isNotEmpty()) {
                         equipmentUnInstallTask(taskType, uninstallApps, job)
                     }
@@ -518,7 +514,6 @@ private const val CHANEL_ID = "cn.com.auto.service.AccessibilityService.foregrou
                         )
                     )
                 }
-                DaoTool.addStatusWithLogin(SP.getString(Constant.LOGIN_NAME))
             }
 
         }
@@ -551,7 +546,7 @@ private const val CHANEL_ID = "cn.com.auto.service.AccessibilityService.foregrou
                 }
                 EasyFloat.with(this@AccessibilityService).setLayout(R.layout.toast_) {
                     it.tv_toast.text = msg
-                    it.postDelayed({ EasyFloat.dismiss("1") }, 60*1000)
+                    it.postDelayed({ EasyFloat.dismiss("1") }, 4 * 1000)
                 }.setTag("1").setMatchParent(true).setGravity(Gravity.BOTTOM, 0, -120)
                     .setShowPattern(ShowPattern.ALL_TIME).setDragEnable(false).setAnimator(null)
                     .show()
@@ -598,9 +593,9 @@ private const val CHANEL_ID = "cn.com.auto.service.AccessibilityService.foregrou
                 floatBallManager!!.isCanOpen = false
                 floatBallManager!!.changeState(false)
                 currentJob?.cancel()/*协程的取消并不可靠*/
+                EventController.INSTANCE.getCurrentEvent()?.cancel()
                 currentType = taskType!!
                 val i = AutoJs.getInstance().scriptEngineService.stopAll()
-                L.e("需要停止的脚本数量:--${i}")
                 if (i != 0) {
                     showBottomToast("正在停止脚本")
                     suspendListenerStop()
@@ -644,25 +639,30 @@ private const val CHANEL_ID = "cn.com.auto.service.AccessibilityService.foregrou
         }
     }
 
-    /*重新开始任务，脚本任务会先走下载*/
     private fun resumeTask() {
-        if (AccessibilityViewModel.normalStartService.value == true) {
+        if (AccessibilityViewModel.normalStartService.value == true && AccessibilityViewModel.vipStop.value == false) {
             if (!floatBallManager!!.state) {
-                floatBallManager!!.changeState(true)
+                stateExtra = false
                 when (currentType) {
                     TaskType.AUTO_EXECUTE_TASK -> {
+                        floatBallManager?.changeState(true)
                         AccessibilityViewModel.executeTask.postValue(true)
                     }
 
                     TaskType.AUTO_SHUT_DOWN_TASK -> {
+                        floatBallManager?.changeState(true)
+
                         AccessibilityViewModel.shutDownTask.postValue(true)
                     }
 
                     TaskType.AUTO_RESTART_TASK -> {
+                        floatBallManager?.changeState(true)
                         AccessibilityViewModel.restartTask.postValue(true)
                     }
 
                     TaskType.AUTO_EXIT_TASK -> {
+                        floatBallManager?.changeState(true)
+
                         AccessibilityViewModel.exitTask.postValue(true)
                     }
 
@@ -671,6 +671,7 @@ private const val CHANEL_ID = "cn.com.auto.service.AccessibilityService.foregrou
                     }
 
                     TaskType.AUTO_QUERY_TASK -> {
+                        floatBallManager?.changeState(true)
                         AccessibilityViewModel.queryTask.postValue(1)
                     }
 
@@ -687,7 +688,7 @@ private const val CHANEL_ID = "cn.com.auto.service.AccessibilityService.foregrou
     private fun addFloatMenuItem() {
         val stopItem: MenuItem = object : MenuItem(BackGroudSeletor.getdrawble("icon_stop", this)) {
             override fun action() {
-                if (AccessibilityViewModel.normalStartService.value == true) {
+                if (AccessibilityViewModel.normalStartService.value == true && AccessibilityViewModel.vipStop.value == false) {
                     if (floatBallManager!!.state) {
                         App.app.launch {
                             AccessibilityViewModel.stopTask.postValue(true)
@@ -722,50 +723,51 @@ private const val CHANEL_ID = "cn.com.auto.service.AccessibilityService.foregrou
             }
         floatBallManager!!.addMenuItem(stopItem).addMenuItem(beginItem).buildMenu()
     }
-
-
-    private fun initObserver() {
-        AccessibilityViewModel.onDate.observe(this, Observer {
-            if (it) {
-                val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
-                val date = dateFormat.parse(SP.getString(Constant.EXPIRY_TIME))
-                val upTime = date.time
-                val now = System.currentTimeMillis()
-                val delayTime = upTime - now
-                App.app.launch {
-                    delay(delayTime)
-                    /**到期了么？*/
-                    kotlin.runCatching {
-                        Api.getApiService().queryAppTask(SP.getString(Constant.TOKEN), true)
-                    }.onFailure {
-                        it.printStackTrace()
-                    }.onSuccess {
-                        if (it.success) {
-                            val jsonObject = JSONObject.parseObject(JSONObject.toJSONString(it.obj))
-                            val stringDate = jsonObject.getString("expiryTime")
-                            val upDate = dateFormat.parse(stringDate)
-                            val upDateTime = upDate.time
-                            if (upDateTime > upTime) {/*更新了!*/
-                                SP.putString(Constant.EXPIRY_TIME, stringDate)
-                                AccessibilityViewModel.onDate.value = true
-                                return@launch
-                            } else {
-                                AccessibilityViewModel.stopTask.postValue(true)
-                                suspendListenerPause()
-                                onPauseListener = null
-                                val intent =
-                                    Intent(this@AccessibilityService, MainActivity::class.java)
-                                intent.putExtra(Constant.UPTIME, "up_time")
-                                startActivity(intent)
-                            }
-                        }
-                    }
-
+    private suspend fun looperDateTask(){
+        kotlin.runCatching {
+            Api.getApiService().queryAppTask(SP.getString(Constant.TOKEN), true)
+        }.onSuccess {
+            val jsonArray = JSONArray.parseArray(JSONArray.toJSONString(it.obj))
+            if (jsonArray.isEmpty()){
+                return@onSuccess
+            }
+            val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
+            val jsonObject = jsonArray.getJSONObject(0)
+            val stringDate = jsonObject.getString("expiryTime")
+            val upDate = dateFormat.parse(stringDate)
+            val upDateTime = upDate.time
+            if (upDateTime <=System.currentTimeMillis()){
+                /*到期!*/
+                if (AccessibilityViewModel.vipStop.value == false){
+                    stateExtra = true
+                    AccessibilityViewModel.stopTask.postValue(true)
+                    suspendListenerPause()
+                    onPauseListener = null
+                    AccessibilityViewModel.vipStop.postValue(true)
+                    SP.putStringN(Constant.EXPIRY_TIME,stringDate)
+                    val intent =
+                        Intent(this@AccessibilityService, MainActivity::class.java)
+                    intent.putExtra(Constant.UPTIME, "up_time")
+                    startActivity(intent)
+                }
+            }else{
+                /*没到期*/
+                if (AccessibilityViewModel.vipStop.value == true){
+                    AccessibilityViewModel.vipStop.postValue(false)
+                    delay(2000)
+                    resumeTask()
+                    cmdWork = ""
                 }
             }
+        }.onFailure {
+            it.printStackTrace()
+        }
+
+    }
+
+    private fun initObserver() {
 
 
-        })
         AccessibilityViewModel.shutDownTask.observe(this, Observer {
             if (it) {
                 if (floatBallManager?.state != true) {
@@ -790,7 +792,7 @@ private const val CHANEL_ID = "cn.com.auto.service.AccessibilityService.foregrou
             }
         })
         AccessibilityViewModel.normalStartService.observe(this, Observer {
-            if (it){
+            if (it) {
                 floatBallManager?.changeState(false)
             }
         })
@@ -903,12 +905,12 @@ private const val CHANEL_ID = "cn.com.auto.service.AccessibilityService.foregrou
                         showTopToast("正在进行每日维护，请勿干扰！")
                         taskType = TaskType.AUTO_MAINTENANCE_TASK
 
-                        equipmentMaintenanceTask(taskType!!, "", currentJob!!)
+                        equipmentMaintenanceTask(taskType!!, currentJob!!)
                         onFinishListener?.onFinish("onFinish")
                         onFinishListener = null
                     } else {
                         showTopToast("正在进行系统维护，请勿干扰！")
-                        taskType = TaskType.AUTO_MAINTENANCE_TASK
+                        taskType = TaskType.AUTO_FIRST_MAINTENANCE_TASK
                         if (!SP.getBoolean(Constant.AUTO_START)) {
                             showTopToast("正在进行系统维护，请勿干扰！")
                             showBottomToast("自启动授权中")
@@ -927,12 +929,15 @@ private const val CHANEL_ID = "cn.com.auto.service.AccessibilityService.foregrou
                                 )
                             )
                         }
-                        suspendAutoClearEvent(  TaskProperty(
-                            taskType!!, packageName, "", "", false, currentJob, ""
-                        ))
-                        equipmentMaintenanceTask(taskType!!, "", currentJob!!)/**/
-                        val intent = Intent(this@AccessibilityService,MainActivity::class.java)
-                        intent.putExtra(Constant.SCRIPT_APP,Constant.SCRIPT_APP)
+                        suspendAutoClearEvent(
+                            TaskProperty(
+                                taskType!!, packageName, "", "", false, currentJob, ""
+                            )
+                        )
+                        equipmentMaintenanceTask(taskType!!, currentJob!!)
+                        showBottomToast("部署完成，等待下一步操作")
+                        val intent = Intent(this@AccessibilityService, MainActivity::class.java)
+                        intent.putExtra(Constant.SCRIPT_APP, Constant.SCRIPT_APP)
                         startActivity(intent)
                     }
                 }
@@ -942,15 +947,27 @@ private const val CHANEL_ID = "cn.com.auto.service.AccessibilityService.foregrou
         AccessibilityViewModel.stopTask.observe(this, Observer {
             floatBallManager?.closeMenu()
             if (it) {
-                App.app.launch {
-                    showTopToast("任务暂停")
-                    stopTask(null, TaskType.AUTO_STOP_TASK)
+                if (AccessibilityViewModel.normalStartService.value == true) {
+                    App.app.launch {
+                        if (!stoping) {
+                            stoping = true
+                            showTopToast("任务暂停")
+                            stopTask(null, TaskType.AUTO_STOP_TASK)
+                            stoping = false
+
+                        }
+
+                    }
                 }
             } else {
                 if (AccessibilityViewModel.normalStartService.value == true) {
                     App.app.launch {
-                        showTopToast("任务暂停")
-                        stopTask()
+                        if (!stoping) {
+                            stoping = true
+                            showTopToast("任务暂停")
+                            stopTask()
+                            stoping = false
+                        }
                     }
                 }
             }
@@ -996,6 +1013,13 @@ private const val CHANEL_ID = "cn.com.auto.service.AccessibilityService.foregrou
                             AccessibilityViewModel.equipmentMaintenanceTask.postValue(true)
                         }
 
+                        TaskType.AUTO_FIRST_MAINTENANCE_TASK -> {
+                            it.job.cancel()
+                            showTopToast("超时重试中!")
+                            AccessibilityViewModel.equipmentMaintenanceTask.postValue(false)
+
+                        }
+
                         TaskType.AUTO_STOP_SCRIPT_TASK -> {
 
                         }
@@ -1032,6 +1056,24 @@ private const val CHANEL_ID = "cn.com.auto.service.AccessibilityService.foregrou
                 }
             }
         })
+        AccessibilityViewModel.looperStateTask.observe(this, Observer {
+            if (it){
+                looperDateJob = App.app.launch {
+                    withContext(Dispatchers.IO){
+                        while (true){
+                            looperDateTask()
+                            delay(10*1000)
+                        }
+                    }
+                }
+            }else{
+                if (looperDateJob != null){
+                    looperDateJob?.cancel()
+                }
+            }
+
+
+        })
         AccessibilityViewModel.logout.observe(this, Observer {
             if (it != null) {
                 if (floatBallManager?.state != true) {
@@ -1040,6 +1082,7 @@ private const val CHANEL_ID = "cn.com.auto.service.AccessibilityService.foregrou
                         AccessibilityViewModel.settingTask.postValue(false)
                         AccessibilityViewModel.heartBeatTask.postValue(false)
                         AccessibilityViewModel.stopTask.postValue(false)
+                        cmdDo = false
                         if (EasyFloat.isShow("1")) {
                             EasyFloat.dismiss("1")
                         }
@@ -1086,9 +1129,6 @@ private const val CHANEL_ID = "cn.com.auto.service.AccessibilityService.foregrou
         })
         AccessibilityViewModel.report.observe(this, Observer {
             if (!TextUtils.isEmpty(it)) {
-                App.app.launch {
-                    showBottomToast("正在上报")
-                }
                 appExecutionFeedBack(it)
             }
         })
@@ -1182,8 +1222,6 @@ private const val CHANEL_ID = "cn.com.auto.service.AccessibilityService.foregrou
         })
     }
 
-
-    /*维护任务，卸载*/
     private suspend fun equipmentUnInstallTask(
         scope: TaskType, it: MutableList<JSONObject>, job: Job
     ) {
@@ -1383,7 +1421,6 @@ private const val CHANEL_ID = "cn.com.auto.service.AccessibilityService.foregrou
     }
 
     private suspend fun settingTask(scope: TaskProperty) {
-        /**特殊任务执行中，不允许被中断，收到任何中断指令需要上报，并提示*/
         floatBallManager!!.changeState(true)
         floatBallManager!!.isCanOpen = false
         if (AccessibilityViewModel.logout.value != null) {
@@ -1419,6 +1456,7 @@ private const val CHANEL_ID = "cn.com.auto.service.AccessibilityService.foregrou
     @SuppressLint("CheckResult")
     private suspend fun hearBeatTask(state: Boolean) {/*同步*/
         kotlin.runCatching {
+            L.e("stateExtra:$stateExtra")
             Api.getApiService().deviceReport(
                 SP.getString(Constant.TOKEN),
                 if (SP.getString(Constant.DEVICE_ID) == "") 0 else SP.getString(Constant.DEVICE_ID)
@@ -1441,7 +1479,7 @@ private const val CHANEL_ID = "cn.com.auto.service.AccessibilityService.foregrou
                         return@onSuccess
                     } else {/*接收指令*/
                         if (TextUtils.isEmpty(cmdWork)) {
-                            if (cmdDo){
+                            if (cmdDo && AccessibilityViewModel.vipStop.value == false) {
                                 AccessibilityViewModel.cmdTask.postValue(item)
                             }
                         }
@@ -1458,7 +1496,6 @@ private const val CHANEL_ID = "cn.com.auto.service.AccessibilityService.foregrou
     @SuppressLint("WrongConstant")
     override fun onCreate() {
         super.onCreate()
-        L.e("Service onCreate")
         EventBus.getDefault().register(this)
         mLifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_CREATE)
         val intentFilter = IntentFilter()
@@ -1481,12 +1518,10 @@ private const val CHANEL_ID = "cn.com.auto.service.AccessibilityService.foregrou
     }
 
     private fun hasPackageName(appPackageName: String, versionCode: Int): Boolean {
-        // get all apps
         val apps: List<PackageInfo> = packageManager.getInstalledPackages(0)
         for (item in apps) {
             val name = item.packageName
             val version = item.longVersionCode
-            L.e("current $name --------$version--------- target $appPackageName$versionCode")
             if (name.equals(appPackageName) && version.toInt() >= versionCode) {/*不需要安装*/
                 return false
             }
@@ -1495,12 +1530,16 @@ private const val CHANEL_ID = "cn.com.auto.service.AccessibilityService.foregrou
     }
 
     private fun hasPackageName(appPackageName: String): Boolean {
-        // get all apps
         val apps: List<PackageInfo> = packageManager.getInstalledPackages(0)
         for (item in apps) {
             val name = item.packageName
+
             if (name.equals(appPackageName)) {/*不需要安装*/
-                return false
+                return if (name.equals("om.eg.android.AlipayGphone")) {
+                    true
+                } else if (name.equals("com.tencent.mm")) {
+                    true
+                } else name.equals("com.tencent.mobileqq")
             }
         }
         return true
@@ -1531,7 +1570,6 @@ private const val CHANEL_ID = "cn.com.auto.service.AccessibilityService.foregrou
 
     override fun onDestroy() {
         super.onDestroy()
-        L.e("Service onDestroy")
         EventBus.getDefault().unregister(this)
         heartBeatJob?.cancel()
         currentJob?.cancel()
@@ -1649,7 +1687,6 @@ private const val CHANEL_ID = "cn.com.auto.service.AccessibilityService.foregrou
             showBottomToast("正在下载脚本")
             Api.getApiService().scriptDetail(SP.getString(Constant.TOKEN), scriptId!!)
         }.onFailure {
-            /*继续查询任务*/
             AccessibilityViewModel.queryTask.postValue(1)
         }.onSuccess {
             if (it.success) {
@@ -1671,10 +1708,10 @@ private const val CHANEL_ID = "cn.com.auto.service.AccessibilityService.foregrou
                         AccessibilityViewModel.report.postValue("${appName}不存在!")
                     }
                 } else {
-                    AccessibilityViewModel.report.postValue("执行脚本失败，可能没有进行查询任务!")
+//                    AccessibilityViewModel.report.postValue("执行脚本失败，可能没有进行查询任务!")
                 }
             } else {
-                AccessibilityViewModel.report.postValue("下载脚本失败，参数为false")
+//                AccessibilityViewModel.report.postValue("下载脚本失败，参数为false")
             }
             targetExit = false
             AccessibilityViewModel.queryTask.postValue(1)
